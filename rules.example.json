@@ -1,0 +1,33 @@
+{
+  "_comment": "Kopiere nach rules.json und passe an. Pfade sind relativ zu ~/Library/Caches.",
+
+  "regenerable_caches": [
+    { "name": "Homebrew",         "path": "Homebrew",         "command": ["brew", "cleanup", "-s"] },
+    { "name": "pip",              "path": "pip",               "command": ["pip3", "cache", "purge"] },
+    { "name": "pnpm",             "path": "pnpm",              "command": ["pnpm", "store", "prune"] },
+    { "name": "go-build",         "path": "go-build",          "command": ["go", "clean", "-cache"] },
+    { "name": "pypoetry",         "path": "pypoetry" },
+    { "name": "node-gyp",         "path": "node-gyp" },
+    { "name": "swiftpm",          "path": "org.swift.swiftpm" },
+    { "name": "playwright",       "path": "ms-playwright" },
+    { "name": "playwright-mcp",   "path": "ms-playwright-mcp" },
+    { "name": "camoufox",         "path": "camoufox" },
+    { "name": "virtualenv",       "path": "virtualenv" },
+    { "name": "claude-cli-nodejs","path": "claude-cli-nodejs" }
+  ],
+
+  "capped_app_caches": [
+    { "name": "Edge",   "path": "Microsoft Edge", "process_name": "Microsoft Edge", "max_size_mb": 1000 },
+    { "name": "Brave",  "path": "BraveSoftware",  "process_name": "Brave Browser",  "max_size_mb": 1000 },
+    { "name": "Chrome", "path": "Google",         "process_name": "Google Chrome",  "max_size_mb": 1000 }
+  ],
+
+  "orphan_scan": {
+    "min_size_mb": 5
+  },
+
+  "disk_space_thresholds": {
+    "warn_gb": 20,
+    "critical_gb": 8
+  }
+}

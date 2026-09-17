@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Template. Optional, falls du storage-janitor unbeaufsichtigt per launchd laufen lassen
+  willst. ~/Library/Caches selbst ist nicht TCC-geschützt, aber falls deine rules.json
+  später auch geschützte Ordner (~/Desktop, ~/Documents, ~/Downloads) einbezieht, braucht
+  ein launchd-Agent dafür Full Disk Access (Systemeinstellungen → Datenschutz).
+
+  Ersetze __STORAGE_JANITOR_DIR__ durch den absoluten Pfad zu diesem Ordner und installiere:
+    sed "s|__STORAGE_JANITOR_DIR__|$PWD|g" launchd.plist.template > ~/Library/LaunchAgents/storage-janitor.plist
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/storage-janitor.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>storage-janitor</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/zsh</string>
+        <string>__STORAGE_JANITOR_DIR__/storage-janitor.sh</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key><integer>1</integer>
+        <key>Hour</key><integer>9</integer>
+        <key>Minute</key><integer>15</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>__STORAGE_JANITOR_DIR__/reports/launchd.out</string>
+    <key>StandardErrorPath</key>
+    <string>__STORAGE_JANITOR_DIR__/reports/launchd.err</string>
+</dict>
+</plist>

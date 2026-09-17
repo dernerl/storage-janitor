@@ -1,0 +1,5 @@
+rules.json
+state.json
+reports/
+*.plist
+__pycache__/
