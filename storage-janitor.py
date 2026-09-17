@@ -288,6 +288,7 @@ def main() -> int:
             skipped.append(s)
 
     orphan_cfg = rules.get("orphan_scan", {})
+    known_names |= set(orphan_cfg.get("ignore", []))
     orphans = find_orphan_candidates(known_names, min_mb=float(orphan_cfg.get("min_size_mb", 5)))
 
     thresholds = rules.get("disk_space_thresholds", {})

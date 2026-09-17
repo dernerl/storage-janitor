@@ -17,13 +17,16 @@
   ],
 
   "capped_app_caches": [
-    { "name": "Edge",   "path": "Microsoft Edge", "process_name": "Microsoft Edge", "max_size_mb": 1000 },
-    { "name": "Brave",  "path": "BraveSoftware",  "process_name": "Brave Browser",  "max_size_mb": 1000 },
-    { "name": "Chrome", "path": "Google",         "process_name": "Google Chrome",  "max_size_mb": 1000 }
+    { "name": "Edge",       "path": "Microsoft Edge",              "process_name": "Microsoft Edge", "max_size_mb": 1000 },
+    { "name": "Brave",      "path": "BraveSoftware",                "process_name": "Brave Browser",  "max_size_mb": 1000 },
+    { "name": "Chrome",     "path": "Google",                       "process_name": "Google Chrome",  "max_size_mb": 1000 },
+    { "name": "VSCode-ShipIt", "path": "com.microsoft.VSCode.ShipIt", "process_name": "Code",         "max_size_mb": 300 }
   ],
 
   "orphan_scan": {
-    "min_size_mb": 5
+    "min_size_mb": 5,
+    "ignore": [],
+    "_ignore_comment": "Namen bekannter Falsch-Positive der Orphan-Heuristik: Helper-/Sync-Caches, deren Ordnername nicht zur Haupt-App passt, obwohl die Haupt-App installiert und der Cache aktiv genutzt ist (z.B. ein SharePoint- oder OneDrive-Sync-Helper)."
   },
 
   "disk_space_thresholds": {
