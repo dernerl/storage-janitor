@@ -49,13 +49,20 @@ python3 storage-janitor.py --no-notify
   "capped_app_caches": [
     { "name": "Chrome", "path": "Google", "process_name": "Google Chrome", "max_size_mb": 1000 }
   ],
+  "rotated_dirs": [
+    { "name": "Xcode-DeviceSupport", "path": "~/Library/Developer/Xcode/iOS DeviceSupport", "keep": 1, "process_name": "Xcode" }
+  ],
   "orphan_scan": { "min_size_mb": 5 },
   "disk_space_thresholds": { "warn_gb": 20, "critical_gb": 8 }
 }
 ```
 
-`path` ist relativ zu `~/Library/Caches`. Ohne `command` wird der Ordner direkt mit `rm -rf`
-geleert (korrekt für reine Cache-Verzeichnisse ohne eigene Cleanup-API).
+`path` ist relativ zu `~/Library/Caches`, außer er beginnt mit `/` oder `~` (z.B. `~/.cache/uv`,
+`~/.npm/_cacache`). Ohne `command` wird der Ordner direkt mit `rm -rf` geleert (korrekt für reine
+Cache-Verzeichnisse ohne eigene Cleanup-API) — das gilt auch für `capped_app_caches`.
+
+`rotated_dirs` behält nur die `keep` neuesten Unterordner (z.B. Xcode `iOS DeviceSupport`: eine
+Version pro Gerät reicht). Details: `docs/adr/0002-caches-ausserhalb-library-caches.md`.
 
 Output: `reports/latest.md`, `state.json` (machine-readable), macOS-Notification.
 

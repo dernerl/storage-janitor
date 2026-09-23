@@ -53,6 +53,15 @@ def dir_size_mb(d: Path) -> float:
     return total / (1024 * 1024)
 
 
+def resolve_path(entry: dict) -> Path:
+    """`path` relativ zu ~/Library/Caches, oder absolut bzw. mit `~` für Caches außerhalb
+    (z.B. ~/.cache/uv, ~/.npm)."""
+    raw = entry.get("path", entry["name"])
+    if raw.startswith(("/", "~")):
+        return Path(raw).expanduser()
+    return CACHES / raw
+
+
 def load_rules() -> dict:
     try:
         return json.loads(RULES_FILE.read_text(encoding="utf-8"))
@@ -77,7 +86,7 @@ class Skipped:
 
 def trim_regenerable(entry: dict, apply: bool) -> tuple[Trimmed | None, Skipped | None]:
     name = entry["name"]
-    cache_path = CACHES / entry.get("path", name)
+    cache_path = resolve_path(entry)
     before = dir_size_mb(cache_path)
     if before < 1.0:
         return None, None  # nichts da, kein Eintrag im Report nötig
@@ -108,27 +117,63 @@ def process_running(process_name: str) -> bool:
 
 def trim_capped(entry: dict, apply: bool) -> tuple[Trimmed | None, Skipped | None]:
     name = entry["name"]
-    cache_path = CACHES / entry.get("path", name)
+    cache_path = resolve_path(entry)
     max_mb = float(entry.get("max_size_mb", 1000))
     before = dir_size_mb(cache_path)
     if before <= max_mb:
         return None, None
 
-    proc = entry.get("process_name", name)
-    if process_running(proc):
+    proc = entry.get("process_name")
+    if proc and process_running(proc):
         return None, Skipped(name=name, reason=f"{before:.0f} MB über Limit ({max_mb:.0f} MB), aber {proc} läuft — übersprungen")
 
     if not apply:
         return Trimmed(name=name, method="dry-run", freed_mb=before - max_mb), None
 
-    try:
-        shutil.rmtree(cache_path)
-    except OSError as e:
-        return None, Skipped(name=name, reason=f"rm fehlgeschlagen: {e}")
+    method = entry.get("command")
+    if method:
+        rc, _ = run(method, timeout=600)
+        if rc != 0:
+            return None, Skipped(name=name, reason=f"Kommando fehlgeschlagen: {' '.join(method)}")
+    else:
+        try:
+            shutil.rmtree(cache_path)
+        except OSError as e:
+            return None, Skipped(name=name, reason=f"rm fehlgeschlagen: {e}")
 
     after = dir_size_mb(cache_path)
     freed = max(before - after, 0.0)
-    return Trimmed(name=name, method="rm -rf (über Limit)", freed_mb=freed), None
+    label = " ".join(method) if method else "rm -rf"
+    return Trimmed(name=name, method=f"{label} (über Limit)", freed_mb=freed), None
+
+
+def trim_rotated(entry: dict, apply: bool) -> tuple[list[Trimmed], Skipped | None]:
+    """Behält nur die `keep` neuesten Unterordner (nach mtime), z.B. Xcode iOS DeviceSupport:
+    pro iOS-Version ein Ordner, alte Versionen werden nie wieder gebraucht."""
+    name = entry["name"]
+    base = resolve_path(entry)
+    keep = int(entry.get("keep", 1))
+    if not base.is_dir():
+        return [], None
+
+    subdirs = sorted((d for d in base.iterdir() if d.is_dir()),
+                     key=lambda d: d.stat().st_mtime, reverse=True)
+    proc = entry.get("process_name")
+    if len(subdirs) > keep and proc and process_running(proc):
+        return [], Skipped(name=name, reason=f"{len(subdirs) - keep} alte Ordner, aber {proc} läuft — übersprungen")
+
+    trimmed = []
+    for d in subdirs[keep:]:
+        size = dir_size_mb(d)
+        if apply:
+            try:
+                shutil.rmtree(d)
+            except OSError as e:
+                return trimmed, Skipped(name=f"{name}/{d.name}", reason=f"rm fehlgeschlagen: {e}")
+        trimmed.append(Trimmed(name=f"{name}/{d.name}",
+                               method=(f"rm -rf (behalte {keep} neueste)" if apply else "dry-run"),
+                               freed_mb=size))
+    return trimmed, None
 
 
 # ── Tier "recommend-only" ────────────────────────────────────────────────────
@@ -284,6 +329,12 @@ def main() -> int:
         t, s = trim_capped(entry, apply)
         if t:
             trimmed.append(t)
+        if s:
+            skipped.append(s)
+
+    for entry in rules.get("rotated_dirs", []):
+        ts, s = trim_rotated(entry, apply)
+        trimmed += ts
         if s:
             skipped.append(s)
 

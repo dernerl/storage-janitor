@@ -1,34 +1,138 @@
 {
-  "_comment": "Kopiere nach rules.json und passe an. Pfade sind relativ zu ~/Library/Caches.",
-
+  "_comment": "Kopiere nach rules.json und passe an. Pfade sind relativ zu ~/Library/Caches, außer sie beginnen mit / oder ~.",
   "regenerable_caches": [
-    { "name": "Homebrew",         "path": "Homebrew",         "command": ["brew", "cleanup", "-s"] },
-    { "name": "pip",              "path": "pip",               "command": ["pip3", "cache", "purge"] },
-    { "name": "pnpm",             "path": "pnpm",              "command": ["pnpm", "store", "prune"] },
-    { "name": "go-build",         "path": "go-build",          "command": ["go", "clean", "-cache"] },
-    { "name": "pypoetry",         "path": "pypoetry" },
-    { "name": "node-gyp",         "path": "node-gyp" },
-    { "name": "swiftpm",          "path": "org.swift.swiftpm" },
-    { "name": "playwright",       "path": "ms-playwright" },
-    { "name": "playwright-mcp",   "path": "ms-playwright-mcp" },
-    { "name": "camoufox",         "path": "camoufox" },
-    { "name": "virtualenv",       "path": "virtualenv" },
-    { "name": "claude-cli-nodejs","path": "claude-cli-nodejs" }
+    {
+      "name": "Homebrew",
+      "path": "Homebrew",
+      "command": [
+        "brew",
+        "cleanup",
+        "-s"
+      ]
+    },
+    {
+      "name": "pip",
+      "path": "pip",
+      "command": [
+        "pip3",
+        "cache",
+        "purge"
+      ]
+    },
+    {
+      "name": "pnpm",
+      "path": "pnpm",
+      "command": [
+        "pnpm",
+        "store",
+        "prune"
+      ]
+    },
+    {
+      "name": "go-build",
+      "path": "go-build",
+      "command": [
+        "go",
+        "clean",
+        "-cache"
+      ]
+    },
+    {
+      "name": "pypoetry",
+      "path": "pypoetry"
+    },
+    {
+      "name": "node-gyp",
+      "path": "node-gyp"
+    },
+    {
+      "name": "swiftpm",
+      "path": "org.swift.swiftpm"
+    },
+    {
+      "name": "playwright",
+      "path": "ms-playwright"
+    },
+    {
+      "name": "playwright-mcp",
+      "path": "ms-playwright-mcp"
+    },
+    {
+      "name": "camoufox",
+      "path": "camoufox"
+    },
+    {
+      "name": "virtualenv",
+      "path": "virtualenv"
+    },
+    {
+      "name": "claude-cli-nodejs",
+      "path": "claude-cli-nodejs"
+    }
   ],
-
   "capped_app_caches": [
-    { "name": "Edge",       "path": "Microsoft Edge",              "process_name": "Microsoft Edge", "max_size_mb": 1000 },
-    { "name": "Brave",      "path": "BraveSoftware",                "process_name": "Brave Browser",  "max_size_mb": 1000 },
-    { "name": "Chrome",     "path": "Google",                       "process_name": "Google Chrome",  "max_size_mb": 1000 },
-    { "name": "VSCode-ShipIt", "path": "com.microsoft.VSCode.ShipIt", "process_name": "Code",         "max_size_mb": 300 }
+    {
+      "name": "Edge",
+      "path": "Microsoft Edge",
+      "process_name": "Microsoft Edge",
+      "max_size_mb": 1000
+    },
+    {
+      "name": "Brave",
+      "path": "BraveSoftware",
+      "process_name": "Brave Browser",
+      "max_size_mb": 1000
+    },
+    {
+      "name": "Chrome",
+      "path": "Google",
+      "process_name": "Google Chrome",
+      "max_size_mb": 1000
+    },
+    {
+      "name": "VSCode-ShipIt",
+      "path": "com.microsoft.VSCode.ShipIt",
+      "process_name": "Code",
+      "max_size_mb": 300
+    },
+    {
+      "name": "uv",
+      "path": "~/.cache/uv",
+      "max_size_mb": 5000,
+      "command": [
+        "env",
+        "UV_LOCK_TIMEOUT=10",
+        "uv",
+        "cache",
+        "prune"
+      ],
+      "_comment": "Nie --force: dauerlaufende uvx-Server (MCP) halten den Lock, --force löscht deren Umgebung."
+    },
+    {
+      "name": "npm",
+      "path": "~/.npm/_cacache",
+      "max_size_mb": 3000,
+      "command": [
+        "npm",
+        "cache",
+        "clean",
+        "--force"
+      ]
+    }
   ],
-
+  "rotated_dirs": [
+    {
+      "name": "Xcode-DeviceSupport",
+      "path": "~/Library/Developer/Xcode/iOS DeviceSupport",
+      "keep": 1,
+      "process_name": "Xcode"
+    }
+  ],
   "orphan_scan": {
     "min_size_mb": 5,
     "ignore": [],
     "_ignore_comment": "Namen bekannter Falsch-Positive der Orphan-Heuristik: Helper-/Sync-Caches, deren Ordnername nicht zur Haupt-App passt, obwohl die Haupt-App installiert und der Cache aktiv genutzt ist (z.B. ein SharePoint- oder OneDrive-Sync-Helper)."
   },
-
   "disk_space_thresholds": {
     "warn_gb": 20,
     "critical_gb": 8
