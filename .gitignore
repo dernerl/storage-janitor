@@ -3,3 +3,5 @@ state.json
 reports/
 *.plist
 __pycache__/
+scans/
+.dashboard.pid

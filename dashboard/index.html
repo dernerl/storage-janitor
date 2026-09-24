@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plaza Data-Volume</title>
+<meta name="theme-color" content="#b967ff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #ff71ce; --cyan: #01cdfe; --purple: #b967ff; --mint: #05ffa1; --lemon: #fffb96; --peach: #ff9e6b;
+    --night: #1d1030; --night-2: #2a1748; --ink: #1d1030; --muted: #5b4a78;
+    --win: #e4dcf2; --win-hi: #fbf8ff; --win-lo: #9a8ab4; --win-dk: #3a2a58;
+    --up: #d4145a; --down: #00866b;
+    --hz: 210px;           /* Horizontlinie der Kulisse */
+    --tb: 38px;            /* Taskleiste */
+    --ui: Tahoma, Verdana, "DejaVu Sans", "Segoe UI", sans-serif;
+    --serif: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --lcd: "VT323", "Lucida Console", "Courier New", monospace;
+    --jp: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", serif;
+    --out: inset -1px -1px var(--win-dk), inset 1px 1px var(--win-hi), inset -2px -2px var(--win-lo), inset 2px 2px #fff;
+    --in: inset -1px -1px #fff, inset 1px 1px var(--win-lo), inset -2px -2px var(--win-hi), inset 2px 2px var(--win-dk);
+    --thin: inset -1px -1px #fff, inset 1px 1px var(--win-lo);
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--night); }
+  body {
+    margin: 0; min-height: 100vh; background: var(--night); color: var(--ink);
+    font: 13px/1.45 var(--ui); -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    padding: 0 20px calc(var(--tb) + 28px);
+  }
+  button { font: inherit; color: inherit; }
+
+  /* ═══ Kulisse: Himmel, gestreifte Sonne, Skyline, Perspektiv-Raster ═══ */
+  .scene { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .sky { position: absolute; left: 0; right: 0; top: 0; height: var(--hz);
+    background: linear-gradient(180deg, #2b0f57 0%, #6a2fb8 28%, #b967ff 52%, #ff71ce 82%, #ffb3e1 100%); }
+  .sun { position: absolute; left: 62%; top: calc(var(--hz) - 170px); width: 230px; height: 230px; border-radius: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, #fffb96 0%, #ffcf8a 35%, #ff9ad5 62%, #ff3fa4 100%);
+    box-shadow: 0 0 80px 20px rgba(255, 113, 206, .45);
+    -webkit-mask-image: linear-gradient(180deg, #000 0 48%, transparent 48% 51%, #000 51% 58%, transparent 58% 62%, #000 62% 68%, transparent 68% 73%, #000 73% 79%, transparent 79% 85%, #000 85%);
+            mask-image: linear-gradient(180deg, #000 0 48%, transparent 48% 51%, #000 51% 58%, transparent 58% 62%, #000 62% 68%, transparent 68% 73%, #000 73% 79%, transparent 79% 85%, #000 85%); }
+  .skyline { position: absolute; left: 0; width: 100%; height: 90px; top: calc(var(--hz) - 89px); display: block; }
+  .floor { position: absolute; left: 0; right: 0; top: var(--hz); bottom: 0; perspective: 260px; perspective-origin: 50% 0;
+    background: linear-gradient(180deg, #3a0f5e 0%, var(--night) 55%); overflow: hidden; }
+  .grid { position: absolute; left: -100%; right: -100%; top: 0; height: 300%; transform-origin: 50% 0;
+    transform: rotateX(68deg);
+    background-image:
+      linear-gradient(rgba(255, 113, 206, .55) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(1, 205, 254, .45) 2px, transparent 2px);
+    background-size: 64px 64px; animation: cruise 5s linear infinite; will-change: transform; }
+  @keyframes cruise { from { transform: rotateX(68deg) translateY(0); } to { transform: rotateX(68deg) translateY(64px); } }
+  .horizon-glow { position: absolute; left: 0; right: 0; top: calc(var(--hz) - 2px); height: 3px;
+    background: linear-gradient(90deg, transparent, #ff71ce 20%, #fffb96 50%, #01cdfe 80%, transparent); box-shadow: 0 0 18px 4px rgba(255, 113, 206, .6); }
+  .crt { position: fixed; inset: 0; z-index: 50; pointer-events: none;
+    background: repeating-linear-gradient(180deg, rgba(20, 0, 40, .07) 0 1px, transparent 1px 3px),
+                radial-gradient(ellipse at 50% 40%, transparent 65%, rgba(20, 0, 40, .35) 100%); }
+  @media (prefers-reduced-motion: reduce) { .grid, .ticker span, .stripes { animation: none !important; } }
+
+  .wrap { position: relative; z-index: 1; max-width: 1440px; margin: 0 auto; }
+
+  /* ═══ Kopf: Mall-Schild ═══ */
+  header { height: var(--hz); display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-bottom: 18px; }
+  .sign { min-width: 0; }
+  .fw { margin: 0; font: 400 15px/1.2 var(--jp); letter-spacing: .28em; color: #fff; text-shadow: 2px 2px 0 #7a2fd0; white-space: nowrap; }
+  h1 { margin: 2px 0 6px; font: italic 700 clamp(34px, 5vw, 56px)/1 var(--serif); letter-spacing: -.01em;
+    background: linear-gradient(180deg, #2a0b52 0%, #6a36c4 34%, #e8dcff 48%, #fff 50%, #ff71ce 54%, #ffc2ea 76%, #9ff0ff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(3px 3px 0 #01cdfe) drop-shadow(1px 1px 0 #2a0b52); white-space: nowrap; }
+  .meta { display: inline-block; max-width: 100%; background: rgba(29, 16, 48, .78); color: #f3eaff; border: 1px solid rgba(255, 255, 255, .25);
+    padding: 3px 10px; font-size: 12px; border-radius: 2px; }
+  .meta .warn { color: var(--lemon); }
+  .scan-box { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+  .scan-btn { position: relative; border: 0; cursor: pointer; padding: 11px 22px 10px; font: 700 14px/1 var(--ui); letter-spacing: .06em; color: var(--ink);
+    background: linear-gradient(180deg, #fffdf0 0%, #fffb96 45%, #ffb3e1 55%, #ff71ce 100%);
+    box-shadow: 0 0 0 2px var(--ink), 4px 4px 0 2px #01cdfe, 0 0 24px rgba(255, 113, 206, .7);
+    transition: transform .12s, box-shadow .12s; text-transform: uppercase; }
+  .scan-btn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 0 0 0 2px var(--ink), 6px 6px 0 2px #01cdfe, 0 0 32px rgba(255, 113, 206, .9); }
+  .scan-btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 0 0 0 2px var(--ink), 1px 1px 0 2px #01cdfe; }
+  .scan-btn:disabled { cursor: progress; background: linear-gradient(180deg, #e9e0f7, #c7b6e6); }
+  .scan-btn:focus-visible { outline: 2px dashed #fff; outline-offset: 5px; }
+  .scan-sub { font: 11px/1 var(--ui); color: #fff; letter-spacing: .1em; background: rgba(29, 16, 48, .78); padding: 3px 8px; }
+
+  /* ═══ Fenster im 95er-Stil, pastell ═══ */
+  .win { background: var(--win); padding: 3px; box-shadow: var(--out), 8px 10px 0 rgba(10, 0, 30, .45); display: flex; flex-direction: column; min-width: 0; }
+  .titlebar { display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 4px; flex: none; color: #fff;
+    background: linear-gradient(90deg, #6a2fc0 0%, #b967ff 45%, #ff71ce 80%, #ff9ad5 100%);
+    font: 700 12px/1 var(--ui); letter-spacing: .03em; user-select: none; }
+  .titlebar h2 { margin: 0; font: inherit; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 1px 1px 0 rgba(40, 0, 80, .6); }
+  .titlebar .jp { font: 11px var(--jp); opacity: .9; letter-spacing: .15em; white-space: nowrap; }
+  .tb-btns { display: flex; gap: 2px; }
+  .tb-btns i { width: 16px; height: 14px; background: var(--win); box-shadow: var(--out); display: block; }
+  .wbody { padding: 6px 5px 5px; min-height: 0; }
+
+  /* Belegungsplan */
+  .disk { margin-bottom: 16px; }
+  .disk-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; font-size: 13px; }
+  .disk-top b { font: 400 22px/1 var(--lcd); letter-spacing: .02em; }
+  .bar { display: flex; height: 22px; padding: 3px; background: #fff; box-shadow: var(--in); gap: 2px; }
+  .bar span { height: 100%; min-width: 2px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 7px; font-size: 12px; color: var(--ink); }
+  .legend i { display: inline-block; width: 11px; height: 11px; margin-right: 5px; vertical-align: -1px; box-shadow: 0 0 0 1px var(--ink); }
+
+  /* Toolbar: Aufzug + Metrik */
+  .toolbar { display: flex; justify-content: space-between; align-items: stretch; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .elevator { display: flex; flex-direction: row; align-items: stretch; gap: 8px; min-width: 0; flex: 1 1 520px; padding: 6px; }
+  .lcd-box { flex: none; display: flex; align-items: center; gap: 6px; padding: 2px 10px; background: #12061f; box-shadow: var(--in);
+    color: #ff71ce; font: 400 30px/1 var(--lcd); text-shadow: 0 0 8px rgba(255, 113, 206, .9); min-width: 96px; justify-content: center; }
+  .lcd-box .arrow { color: var(--cyan); text-shadow: 0 0 8px rgba(1, 205, 254, .9); font-size: 22px; }
+  .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; }
+  .floor-btn { display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--win); box-shadow: var(--out); cursor: pointer;
+    padding: 3px 9px 3px 4px; max-width: 260px; }
+  .floor-btn:hover { background: #f1ebfb; }
+  .floor-btn:active { box-shadow: var(--in); }
+  .floor-btn:focus-visible { outline: 1px dotted var(--ink); outline-offset: -4px; }
+  .floor-btn i { font: normal 400 16px/1 var(--lcd); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; flex: none;
+    background: radial-gradient(circle at 35% 30%, #fff, #d8cdea 60%, #a898c4); color: var(--ink); box-shadow: 0 0 0 1px var(--win-dk); }
+  .floor-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+  .floor-btn.cur { box-shadow: var(--in); background: #f7f2ff; font-weight: 700; }
+  .floor-btn.cur i { background: radial-gradient(circle at 35% 30%, #fffef0, #fffb96 45%, #ff9ad5); box-shadow: 0 0 0 1px var(--win-dk), 0 0 10px 2px rgba(255, 251, 150, .9); }
+  .crumbs .sep { color: var(--win-lo); font-size: 11px; }
+  .seg { display: flex; flex-direction: row; flex-wrap: wrap; gap: 3px; padding: 6px; align-items: center; }
+  .seg .lbl { font-size: 11px; color: var(--muted); margin: 0 4px; text-transform: uppercase; letter-spacing: .08em; }
+  .btn95 { border: 0; background: var(--win); box-shadow: var(--out); padding: 6px 12px 5px; cursor: pointer; font-size: 12.5px; color: var(--ink); }
+  .btn95:hover { background: #f1ebfb; }
+  .btn95:focus-visible { outline: 1px dotted var(--ink); outline-offset: -5px; }
+  .btn95.active { box-shadow: var(--in); background: repeating-conic-gradient(#fff 0 25%, #efe6fb 0 50%) 0 0 / 4px 4px; font-weight: 700; }
+
+  /* Hauptbereich */
+  .main { display: grid; grid-template-columns: minmax(0, 1fr) 370px; gap: 18px; }
+  @media (max-width: 960px) { .main { grid-template-columns: minmax(0, 1fr); } }
+  .map-body { position: relative; padding: 4px; background: var(--night); box-shadow: var(--in); margin: 5px; }
+  #map { display: block; width: 100%; height: min(64vh, 720px); min-height: 320px; cursor: pointer; }
+  .empty { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center;
+    color: #f3eaff; font-size: 14px; text-align: center; padding: 24px; }
+  .empty[hidden] { display: none; }  /* sonst liegt die leere Ebene über der Karte und schluckt alle Klicks */
+  .empty b { font: 400 30px/1 var(--lcd); color: var(--lemon); text-shadow: 0 0 10px rgba(255, 251, 150, .7); letter-spacing: .1em; }
+  .map-status { display: flex; gap: 2px; margin: 0 5px 2px; font-size: 11.5px; }
+  .map-status span { box-shadow: var(--thin); padding: 3px 7px 2px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .map-status span.fit { flex: none; }
+
+  /* Wegweiser (Seitenleiste) */
+  .side { max-height: calc(min(64vh, 720px) + 70px); min-height: 0; }
+  @media (max-width: 960px) { .side { max-height: 640px; } }
+  .side .wbody { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+  .dir-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 2px 4px 6px; }
+  .dir-head b { font: italic 700 20px/1 var(--serif); color: #5a1fa0; }
+  .dir-head small { font: 11px var(--jp); color: var(--muted); letter-spacing: .2em; }
+  .tabs { display: flex; gap: 0; padding-left: 4px; position: relative; z-index: 1; }
+  .tabs button { border: 0; background: var(--win); cursor: pointer; padding: 5px 11px 4px; font-size: 12.5px; margin-right: -1px;
+    box-shadow: inset 1px 1px #fff, inset -1px 0 var(--win-dk), inset -2px 0 var(--win-lo); border-radius: 4px 4px 0 0; color: var(--muted); position: relative; top: 2px; }
+  .tabs button.active { top: 0; padding-bottom: 7px; color: var(--ink); font-weight: 700; background: var(--win-hi); }
+  .tabs button:focus-visible { outline: 1px dotted var(--ink); outline-offset: -4px; }
+  .list { overflow-y: auto; background: var(--win-hi); box-shadow: var(--in); padding: 5px 4px; flex: 1; min-height: 120px; }
+  .list::-webkit-scrollbar { width: 14px; }
+  .list::-webkit-scrollbar-track { background: repeating-conic-gradient(#fff 0 25%, #ddd3ee 0 50%) 0 0 / 4px 4px; }
+  .list::-webkit-scrollbar-thumb { background: var(--win); box-shadow: var(--out); }
+  .row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 1px 8px; padding: 6px 6px 7px; cursor: default; border-bottom: 1px dotted #cfc2e6; }
+  .row.click { cursor: pointer; }
+  .row:hover { background: linear-gradient(90deg, rgba(255, 113, 206, .16), rgba(1, 205, 254, .12)); }
+  .row .shop { grid-row: span 3; width: 30px; height: 30px; display: grid; place-items: center; font: 400 15px/1 var(--lcd); color: var(--ink);
+    box-shadow: 0 0 0 1px var(--ink), 2px 2px 0 1px rgba(29, 16, 48, .35); align-self: start; margin-top: 1px; }
+  .row .name { font-size: 13px; font-weight: 700; word-break: break-all; display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .row .num { font: 400 19px/1 var(--lcd); text-align: right; white-space: nowrap; align-self: center; }
+  .row .sub { grid-column: 2 / -1; font-size: 11.5px; color: var(--muted); }
+  .row .sub.path { word-break: break-all; }
+  .row .mini { grid-column: 2 / -1; height: 5px; background: #ebe3f7; box-shadow: inset 0 0 0 1px #cbbde2; overflow: hidden; margin-top: 3px; }
+  .row .mini span { display: block; height: 100%; }
+  .row .reveal { opacity: 0; border: 0; background: var(--win); box-shadow: var(--out); padding: 1px 5px; font-size: 11px; cursor: pointer; flex: none; color: var(--ink); }
+  .row:hover .reveal, .row:focus-within .reveal { opacity: 1; }
+  .row .reveal:active { box-shadow: var(--in); }
+  .up { color: var(--up); } .down { color: var(--down); }
+  .hint { color: var(--muted); font-size: 12.5px; padding: 10px 8px; }
+  .list h3 { font: 700 11px/1 var(--ui); text-transform: uppercase; letter-spacing: .12em; color: #fff; margin: 10px 2px 4px; padding: 5px 8px;
+    background: linear-gradient(90deg, #6a2fc0, #b967ff 60%, transparent); }
+
+  /* Ladenverzeichnis (Legende) */
+  .directory { margin-top: 18px; }
+  .stores { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 6px; }
+  .store { display: flex; gap: 8px; align-items: center; padding: 5px 8px; background: var(--win-hi); box-shadow: var(--thin); }
+  .store i { width: 22px; height: 22px; flex: none; box-shadow: 0 0 0 1px var(--ink); display: grid; place-items: center; font: normal 14px/1 var(--lcd); }
+  .store b { display: block; font-size: 12.5px; }
+  .store small { display: block; font-size: 11px; color: var(--muted); }
+  .note { font-size: 11.5px; color: var(--muted); margin: 7px 2px 0; }
+
+  /* Tooltip */
+  #tip { position: fixed; pointer-events: none; z-index: 60; display: none; max-width: 420px; background: #fffde0; color: var(--ink);
+    border: 1px solid var(--ink); box-shadow: 4px 4px 0 rgba(185, 103, 255, .7); padding: 6px 9px; font-size: 12px; }
+  #tip b { font-size: 13px; }
+  #tip .p { color: var(--muted); word-break: break-all; }
+  #tip .tag { display: inline-block; padding: 0 5px; margin-right: 4px; box-shadow: 0 0 0 1px var(--ink); font-size: 11px; }
+
+  /* NOW LOADING */
+  .loading { position: fixed; right: 22px; bottom: calc(var(--tb) + 18px); width: 330px; z-index: 40; }
+  .loading[hidden] { display: none; }
+  .nl { font: 400 34px/1 var(--lcd); letter-spacing: .16em; white-space: nowrap; text-shadow: 2px 0 rgba(255, 0, 110, .45), -2px 0 rgba(0, 200, 255, .45); text-align: center; color: var(--night); margin: 6px 0 8px; }
+  .nl .blink { animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .progress { height: 22px; padding: 3px; background: #fff; box-shadow: var(--in); overflow: hidden; }
+  .stripes { height: 100%; width: calc(100% + 56px);
+    background: repeating-linear-gradient(-45deg, #ff71ce 0 10px, #b967ff 10px 20px, #01cdfe 20px 28px);
+    animation: slide 1s linear infinite; will-change: transform; }
+  @keyframes slide { to { transform: translateX(-39.6px); } }
+  .nl-count { font: 400 24px/1 var(--lcd); text-align: center; margin: 8px 0 2px; }
+  .nl-msg { font-size: 12px; text-align: center; color: var(--muted); min-height: 2.9em; }
+
+  /* Taskleiste */
+  .taskbar { position: fixed; left: 0; right: 0; bottom: 0; height: var(--tb); z-index: 45; background: var(--win);
+    box-shadow: inset 0 1px var(--win-hi), inset 0 2px #fff; display: flex; align-items: center; gap: 6px; padding: 4px 5px; }
+  .start { flex: none; display: flex; align-items: center; gap: 6px; font-weight: 700; padding: 4px 10px; box-shadow: var(--out); height: 28px; }
+  .start .logo { width: 16px; height: 16px; border-radius: 50%;
+    background: linear-gradient(180deg, #fffb96 0 45%, transparent 45% 55%, #ff9ad5 55% 70%, transparent 70% 78%, #ff71ce 78%); }
+  .ticker { flex: 1; min-width: 0; height: 28px; box-shadow: var(--thin); overflow: hidden; position: relative; background: #12061f; }
+  .ticker span { position: absolute; top: 0; left: 0; white-space: nowrap; font: 400 20px/28px var(--lcd); color: var(--mint);
+    text-shadow: 0 0 6px rgba(5, 255, 161, .6); padding-left: 100%; animation: tick 40s linear -9s infinite; will-change: transform; }
+  @keyframes tick { to { transform: translateX(-100%); } }
+  .clock { flex: none; box-shadow: var(--thin); padding: 0 10px; height: 28px; display: flex; align-items: center; font-size: 12px; }
+  @media (max-width: 700px) {
+    .fw { display: none; }
+    .sun { left: 78%; width: 170px; height: 170px; top: calc(var(--hz) - 125px); }
+    .titlebar .jp { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="scene" aria-hidden="true">
+  <div class="sky"></div>
+  <div class="sun"></div>
+  <svg class="skyline" viewBox="0 0 1440 90" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="bld" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a1a86"/><stop offset="1" stop-color="#1d1030"/></linearGradient>
+    </defs>
+    <g fill="url(#bld)">
+      <rect x="40" y="38" width="70" height="52"/><rect x="118" y="20" width="38" height="70"/><rect x="164" y="50" width="90" height="40"/>
+      <rect x="300" y="30" width="54" height="60"/><rect x="360" y="56" width="120" height="34"/>
+      <path d="M560 90 V52 H610 V36 L650 14 L690 36 V52 H740 V90 Z"/>
+      <rect x="1010" y="44" width="80" height="46"/><rect x="1096" y="24" width="34" height="66"/><rect x="1138" y="58" width="110" height="32"/>
+      <rect x="1270" y="34" width="60" height="56"/><rect x="1336" y="52" width="80" height="38"/>
+    </g>
+    <g fill="#ff71ce" opacity=".75">
+      <rect x="126" y="28" width="6" height="4"/><rect x="140" y="40" width="6" height="4"/><rect x="310" y="40" width="8" height="4"/>
+      <rect x="1104" y="32" width="6" height="4"/><rect x="1116" y="48" width="6" height="4"/><rect x="1282" y="44" width="8" height="4"/>
+    </g>
+    <g fill="#01cdfe" opacity=".8"><rect x="600" y="60" width="100" height="3"/><rect x="1150" y="66" width="80" height="3"/><rect x="60" y="48" width="30" height="3"/></g>
+    <g stroke="#2a0b52" stroke-width="4" fill="none" stroke-linecap="round">
+      <path d="M820 90 Q826 50 818 24"/><path d="M880 90 Q874 58 884 34"/>
+    </g>
+    <g fill="#2a0b52">
+      <path d="M818 24 q-26 -2 -40 14 q18 -8 40 -10 z M818 24 q24 -6 40 8 q-20 -4 -40 -4 z M818 24 q-10 -16 -30 -18 q14 8 30 22 z M818 24 q8 -18 28 -20 q-16 10 -28 24 z"/>
+      <path d="M884 34 q-24 -2 -36 12 q16 -7 36 -8 z M884 34 q22 -5 36 8 q-18 -4 -36 -3 z M884 34 q-8 -14 -26 -16 q12 7 26 19 z M884 34 q8 -15 24 -17 q-14 9 -24 21 z"/>
+    </g>
+  </svg>
+  <div class="floor"><div class="grid"></div></div>
+  <div class="horizon-glow"></div>
+</div>
+<div class="crt" aria-hidden="true"></div>
+
+<div class="wrap">
+  <header>
+    <div class="sign">
+      <p class="fw">ＰＬＡＺＡ　データ・モール</p>
+      <h1>Plaza Data‑Volume</h1>
+      <div class="meta" id="meta">Türen öffnen sich …</div>
+    </div>
+    <div class="scan-box">
+      <button class="scan-btn" id="scan">Jetzt scannen</button>
+      <span class="scan-sub">★ Inventur aller Läden ★</span>
+    </div>
+  </header>
+
+  <section class="win disk">
+    <div class="titlebar"><h2>Belegungsplan · Macintosh HD</h2><span class="jp">ディスク</span><span class="tb-btns"><i></i><i></i></span></div>
+    <div class="wbody">
+      <div class="disk-top"><span id="disk-label"></span><span id="disk-free"></span></div>
+      <div class="bar" id="disk-bar"></div>
+      <div class="legend" id="disk-legend"></div>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <div class="win elevator" role="navigation" aria-label="Etagen">
+      <div class="lcd-box" title="Aktuelle Etage"><span class="arrow" id="lcd-arrow">▲</span><span id="lcd-floor">EG</span></div>
+      <nav class="crumbs" id="crumbs"></nav>
+    </div>
+    <div class="win seg" id="metric" role="group" aria-label="Metrik">
+      <span class="lbl">Fläche nach</span>
+      <button class="btn95 active" data-m="size">Größe</button>
+      <button class="btn95" data-m="files">Anzahl Dateien</button>
+      <button class="btn95" data-m="growth">Wachstum</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <section class="win">
+      <div class="titlebar"><h2 id="map-title">Lageplan</h2><span class="jp">フロアマップ</span><span class="tb-btns"><i></i><i></i></span></div>
+      <div class="map-body">
+        <canvas id="map"></canvas>
+        <div class="empty" id="empty" hidden></div>
+      </div>
+      <div class="map-status"><span id="st-left">Klick: Etage höher · Doppelklick: im Finder</span><span class="fit" id="st-right"></span></div>
+    </section>
+    <aside class="win side">
+      <div class="titlebar"><h2>Wegweiser</h2><span class="jp">案内板</span><span class="tb-btns"><i></i><i></i></span></div>
+      <div class="wbody">
+        <div class="dir-head"><b>Mall Directory</b><small>インフォメーション</small></div>
+        <div class="tabs" id="tabs" role="tablist">
+          <button data-t="content" class="active">Inhalt</button>
+          <button data-t="files">Größte Dateien</button>
+          <button data-t="growth">Gewachsen</button>
+        </div>
+        <div class="list" id="list"></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="win directory">
+    <div class="titlebar"><h2>Ladenverzeichnis · Kategorien</h2><span class="jp">ショップ</span><span class="tb-btns"><i></i><i></i></span></div>
+    <div class="wbody">
+      <div class="stores" id="cat-legend"></div>
+      <div class="note">Fläche = belegter Platz · Ordner unter 1 % ihres Parents sind zu „weitere“ zusammengefasst · schraffiert = nicht begehbare Bereiche</div>
+    </div>
+  </section>
+</div>
+
+<section class="win loading" id="loading" hidden aria-live="polite">
+  <div class="titlebar"><h2>INVENTUR.EXE</h2><span class="tb-btns"><i></i></span></div>
+  <div class="wbody">
+    <div class="nl">NOW LOADING<span class="blink">_</span></div>
+    <div class="progress"><div class="stripes"></div></div>
+    <div class="nl-count" id="nl-count">0 Dateien gezählt</div>
+    <div class="nl-msg" id="nl-msg"></div>
+  </div>
+</section>
+
+<div class="taskbar">
+  <div class="start"><span class="logo"></span>Plaza</div>
+  <div class="ticker"><span id="ticker">✦ Willkommen in der Plaza Data-Volume ✦</span></div>
+  <div class="clock" id="clock">--:--</div>
+</div>
+<div id="tip"></div>
+
+<script>
+/* Kategorien: [Name, Farbe, Laden-Spitzname] */
+const CATS = [
+  ["Caches", "#ff71ce", "Food Court"], ["Entwicklung", "#01cdfe", "Elektronikmarkt"], ["Apps", "#b967ff", "Software-Boutique"],
+  ["Medien", "#05ffa1", "Kino & Platten"], ["Dokumente", "#fffb96", "Schreibwaren"], ["System", "#a495c2", "Haustechnik"],
+  ["Sonstiges", "#ff9e6b", "Kaufhaus"], ["Nicht erfasst", "#6a5890", "Baustelle"],
+];
+const OTHER_VOL = "#3b2860";
+const ROOT_NAME = "Data-Volume";
+let scan = null, growth = null, metric = "size", tab = "content", view = [];  // view = Namenspfad
+let rects = [], hover = null, lastDepth = 1;
+const base = document.createElement("canvas");   // fertige Treemap; Hover wird nur darübergelegt
+
+const $ = id => document.getElementById(id);
+const fmt = b => {
+  const a = Math.abs(b);
+  if (a >= 1e9) return (b / 1e9).toFixed(a >= 1e11 ? 0 : 1) + " GB";
+  if (a >= 1e6) return (b / 1e6).toFixed(0) + " MB";
+  if (a >= 1e3) return (b / 1e3).toFixed(0) + " KB";
+  return b + " B";
+};
+const fmtN = n => n.toLocaleString("de-DE");
+const signed = b => (b > 0 ? "+" : b < 0 ? "−" : "±") + fmt(Math.abs(b));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const displayPath = names => "/" + names.slice(1).join("/");
+const realPath = names => scan.root + (names.length > 1 ? "/" + names.slice(1).join("/") : "");
+const floorName = i => i === 0 ? "EG" : i + ".OG";
+const ago = iso => {
+  const h = (Date.now() - new Date(iso)) / 36e5;
+  return h < 1 ? `vor ${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `vor ${Math.round(h)} h` : `vor ${Math.round(h / 24)} Tagen`;
+};
+
+function value(n) {
+  if (metric === "files") return n.f;
+  if (metric === "growth") return Math.max(n.d || 0, 0);
+  return n.s;
+}
+
+function nodeAt(names) {
+  let n = scan.tree;
+  for (const name of names.slice(1)) {
+    n = (n.c || []).find(c => c.n === name);
+    if (!n) return null;
+  }
+  return n;
+}
+
+/* Kinder der aktuellen Ansicht; im Wurzel-Knoten + „Nicht erfasst“ und „macOS & andere Volumes“,
+   damit die Summe zur Platte passt. */
+function childrenOf(n, depth) {
+  const kids = (n.c || []).slice();
+  if (depth === 0 && n === scan.tree && metric === "size") {
+    const v = scan.volume, unscanned = Math.max(v.data_used - scan.tree.s, 0);
+    const other = Math.max(v.total - v.free - v.data_used, 0);
+    if (unscanned) kids.push({n: "Nicht erfasst", s: unscanned, f: 0, k: 7, virtual: 1,
+      hint: "Snapshots, purgeable Speicher" + (scan.privileged ? "" : ", ohne sudo nicht lesbare Ordner")});
+    if (other) kids.push({n: "macOS, Swap & andere Volumes", s: other, f: 0, k: 7, virtual: 1, color: OTHER_VOL,
+      hint: "System-Volume, VM/Swap, Preboot, Recovery — nicht scanbar, von macOS verwaltet"});
+  }
+  return kids.filter(c => value(c) > 0).sort((a, b) => value(b) - value(a));
+}
+
+/* ── Squarified Treemap (Bruls, Huizing, van Wijk) ─────────────────────── */
+function squarify(items, x, y, w, h) {
+  const out = [], total = items.reduce((s, i) => s + i.v, 0);
+  if (!total || w <= 0 || h <= 0) return out;
+  const scale = (w * h) / total;
+  let rest = items.map(i => ({...i, a: i.v * scale}));
+  while (rest.length) {
+    const short = Math.min(w, h);
+    let row = [rest[0]], best = worst(row, short), i = 1;
+    for (; i < rest.length; i++) {
+      const next = worst([...row, rest[i]], short);
+      if (next > best) break;
+      row.push(rest[i]); best = next;
+    }
+    rest = rest.slice(row.length);
+    const sum = row.reduce((s, r) => s + r.a, 0);
+    if (w >= h) {
+      const cw = sum / h; let cy = y;
+      for (const r of row) { const rh = r.a / cw; out.push({...r, x, y: cy, w: cw, h: rh}); cy += rh; }
+      x += cw; w -= cw;
+    } else {
+      const rh = sum / w; let cx = x;
+      for (const r of row) { const rw = r.a / rh; out.push({...r, x: cx, y, w: rw, h: rh}); cx += rw; }
+      y += rh; h -= rh;
+    }
+  }
+  return out;
+}
+function worst(row, side) {
+  const s = row.reduce((a, r) => a + r.a, 0), mx = Math.max(...row.map(r => r.a)), mn = Math.min(...row.map(r => r.a));
+  return Math.max((side * side * mx) / (s * s), (s * s) / (side * side * mn));
+}
+
+/* ── Farben ────────────────────────────────────────────────────────────── */
+const rgb = hex => { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+function shade(hex, f) {
+  return `rgb(${rgb(hex).map(v => Math.round(f > 0 ? v + (255 - v) * f : v * (1 + f))).join(",")})`;
+}
+function mix(hex, hex2, t) {  // t=0 → hex, t=1 → hex2
+  const a = rgb(hex), b = rgb(hex2);
+  return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`;
+}
+function light(hex) {  // helle Fläche → dunkle Schrift
+  const [r, g, b] = rgb(hex).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; });
+  return .2126 * r + .7152 * g + .0722 * b > .32;
+}
+const colorOf = n => n.color || CATS[n.k][1];
+
+/* ── Zeichnen ──────────────────────────────────────────────────────────── */
+function draw() {
+  const cv = $("map"), dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = base.width = W * dpr; cv.height = base.height = H * dpr;
+  const ctx = base.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = "#1d1030"; ctx.fillRect(0, 0, W, H);
+  rects = [];
+
+  const cur = nodeAt(view);
+  const top = cur ? childrenOf(cur, 0) : [];
+  $("empty").hidden = top.length > 0;
+  if (!top.length) {
+    $("empty").innerHTML = "<b>GESCHLOSSEN</b>" + (metric === "growth"
+      ? (scan.previous_generated ? "Auf dieser Etage ist seit dem letzten Scan nichts gewachsen." : "Noch kein vorheriger Scan zum Vergleichen — nach dem nächsten Scan sichtbar.")
+      : "Keine Daten.");
+    paint();
+    return;
+  }
+
+  function layout(node, names, x, y, w, h, depth) {
+    const kids = depth === 0 ? top : childrenOf(node, depth);
+    const items = kids.map(c => ({node: c, v: value(c)}));
+    for (const r of squarify(items, x, y, w, h)) {
+      const n = r.node, path = [...names, n.n];
+      rects.push({x: r.x, y: r.y, w: r.w, h: r.h, node: n, names: path, depth});
+      const color = colorOf(n);
+      const header = depth === 0 && r.w > 70 && r.h > 44 && n.c;
+      const leaf = !n.c || r.w < 6 || r.h < 6 || !childrenOf(n, depth + 1).length;
+      if (leaf) {
+        // Pastell-Kissen: helles Licht oben links, neon-satte Mitte, violetter Schatten unten rechts
+        const g = ctx.createLinearGradient(r.x, r.y, r.x + r.w, r.y + r.h);
+        g.addColorStop(0, shade(color, .45));
+        g.addColorStop(.5, color);
+        g.addColorStop(1, mix(color, "#4a1a86", .45));
+        ctx.fillStyle = g;
+        ctx.fillRect(r.x, r.y, r.w, r.h);
+        if (n.virtual) {  // schraffiert: nicht begehbare Bereiche
+          ctx.save(); ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
+          ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.lineWidth = 6;
+          for (let i = -r.h; i < r.w; i += 16) { ctx.beginPath(); ctx.moveTo(r.x + i, r.y + r.h); ctx.lineTo(r.x + i + r.h, r.y); ctx.stroke(); }
+          ctx.restore();
+        }
+      } else {
+        ctx.fillStyle = mix(color, "#1d1030", .72);
+        ctx.fillRect(r.x, r.y, r.w, r.h);
+        const hh = header ? 20 : 0, p = depth === 0 ? 3 : 1;
+        if (header) {
+          const g = ctx.createLinearGradient(r.x, 0, r.x + r.w, 0);
+          g.addColorStop(0, mix(color, "#1d1030", .25)); g.addColorStop(1, mix(color, "#1d1030", .6));
+          ctx.fillStyle = g; ctx.fillRect(r.x, r.y, r.w, hh + p);
+        }
+        layout(n, path, r.x + p, r.y + p + hh, r.w - 2 * p, r.h - 2 * p - hh, depth + 1);
+      }
+      ctx.strokeStyle = "#1d1030"; ctx.lineWidth = depth === 0 ? 2 : .6;
+      ctx.strokeRect(r.x, r.y, r.w, r.h);
+      if (depth === 0 && r.w > 50 && r.h > 16 && (header || leaf)) label(ctx, r, n, leaf ? color : mix(color, "#1d1030", .25), 12);
+      else if (depth >= 1 && leaf && r.w > 80 && r.h > 26) label(ctx, r, n, color, 11);
+    }
+  }
+  layout(cur, view, 0, 0, W, H, 0);
+  paint();
+}
+
+function label(ctx, r, n, bg, size) {
+  const txt = `${n.n}  ${metricText(n)}`;
+  const dark = light(bg.startsWith("#") ? bg : "#" + bg.match(/\d+/g).map(v => (+v).toString(16).padStart(2, "0")).join(""));
+  ctx.save();
+  ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
+  ctx.font = `700 ${size}px Tahoma, Verdana, sans-serif`;
+  if (dark) { ctx.fillStyle = "#1d1030"; ctx.shadowColor = "rgba(255,255,255,.55)"; ctx.shadowBlur = 2; }
+  else { ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(29,16,48,.9)"; ctx.shadowBlur = 3; }
+  ctx.fillText(txt, r.x + 6, r.y + size + 3);
+  ctx.restore();
+}
+
+/* Hover-Rahmen über die gecachte Treemap legen — kein Neuaufbau pro Mausbewegung */
+function paint() {
+  const cv = $("map"), ctx = cv.getContext("2d"), dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(base, 0, 0);
+  if (!hover) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const topRect = rects.find(r => r.depth === 0 && r.names[view.length] === hover.names[view.length]);
+  if (topRect && topRect !== hover && topRect.node.c) {
+    ctx.setLineDash([6, 4]); ctx.strokeStyle = "#01cdfe"; ctx.lineWidth = 2;
+    ctx.strokeRect(topRect.x + 1, topRect.y + 1, topRect.w - 2, topRect.h - 2);
+    ctx.setLineDash([]);
+  }
+  ctx.strokeStyle = "#fffb96"; ctx.lineWidth = 2.5; ctx.shadowColor = "#ff71ce"; ctx.shadowBlur = 8;
+  ctx.strokeRect(hover.x + 1.5, hover.y + 1.5, hover.w - 3, hover.h - 3);
+  ctx.shadowBlur = 0;
+}
+
+function metricText(n) {
+  if (metric === "files") return fmtN(n.f) + " Dateien";
+  if (metric === "growth") return signed(n.d || 0);
+  return fmt(n.s);
+}
+
+/* ── Interaktion ───────────────────────────────────────────────────────── */
+function clickHint(r) {
+  if (r.node.virtual) return "";
+  const top = rects.find(t => t.depth === 0 && t.names[view.length] === r.names[view.length]);
+  return top && top.node.c ? " · Klick: Etage höher · Doppelklick: im Finder" : " · Klick: im Finder zeigen";
+}
+
+function hit(ev) {
+  const b = $("map").getBoundingClientRect(), x = ev.clientX - b.left, y = ev.clientY - b.top;
+  let found = null;
+  for (const r of rects) if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) found = r;  // tiefster gewinnt
+  return found;
+}
+
+$("map").addEventListener("mousemove", ev => {
+  const r = hit(ev), tip = $("tip");
+  if (r !== hover) { hover = r; paint(); }
+  if (!r) { tip.style.display = "none"; $("st-right").textContent = ""; return; }
+  const n = r.node, cat = CATS[n.k];
+  const parts = [`<b>${esc(n.n)}</b>`,
+    n.virtual ? esc(n.hint) : `${fmt(n.s)} · ${fmtN(n.f)} Dateien` + (Math.abs(n.d || 0) >= 1e6 ? ` · <span class="${n.d > 0 ? "up" : "down"}">${signed(n.d)}</span> seit letztem Scan` : ""),
+    n.virtual ? "" : `<span class="p">${esc(displayPath(r.names))}</span>`,
+    `<span class="tag" style="background:${colorOf(n)};color:${light(colorOf(n)) ? "#1d1030" : "#fff"}">${cat[0]}</span><span class="p">${cat[2]}${clickHint(r)}</span>`];
+  tip.innerHTML = parts.filter(Boolean).join("<br>");
+  tip.style.display = "block";
+  const tx = Math.min(ev.clientX + 16, innerWidth - tip.offsetWidth - 8);
+  const ty = ev.clientY + 18 + tip.offsetHeight > innerHeight ? ev.clientY - tip.offsetHeight - 10 : ev.clientY + 18;
+  tip.style.left = tx + "px"; tip.style.top = ty + "px";
+  $("st-right").textContent = n.virtual ? n.n : displayPath(r.names);
+});
+$("map").addEventListener("mouseleave", () => { hover = null; $("tip").style.display = "none"; $("st-right").textContent = ""; paint(); });
+/* Einfachklick: eine Etage höher (ist der Laden auf dieser Etage eine Datei → Finder).
+   Doppelklick oder ⌘-Klick: genau die Kachel unter der Maus (wie im Tooltip) im Finder zeigen.
+   Der Einfachklick wartet kurz, damit ein Doppelklick nicht vorher schon hineinzoomt. */
+function finderTarget(r) {
+  if (r.node.virtual) return null;
+  return r.node.rest ? r.names.slice(0, -1) : r.names;
+}
+let clickTimer = null;
+$("map").addEventListener("click", ev => {
+  const r = hit(ev);
+  if (!r) return;
+  clearTimeout(clickTimer);
+  if (ev.metaKey || ev.detail >= 2) {
+    const names = finderTarget(r);
+    if (names) revealTile(names);
+    return;
+  }
+  clickTimer = setTimeout(() => {
+    const top = rects.find(t => t.depth === 0 && t.names[view.length] === r.names[view.length]);
+    if (!top) return;
+    if (top.node.c) return go(top.names);
+    const names = finderTarget(top);
+    if (names) revealTile(names);
+  }, 250);
+});
+
+async function revealTile(names) {
+  const res = await fetch("/api/reveal", {method: "POST", headers: {"Content-Type": "application/json"},
+                                          body: JSON.stringify({path: realPath(names)})}).catch(() => null);
+  const ok = res && res.ok;
+  const el = $("st-left"), before = el.textContent;
+  el.textContent = ok ? `📂 Im Finder: ${displayPath(names)}` : `⚠ Nicht gefunden (seit dem Scan gelöscht?): ${displayPath(names)}`;
+  clearTimeout(revealTile.t);
+  revealTile.t = setTimeout(() => { el.textContent = before; }, 3500);
+}
+
+function go(names) {
+  view = names;
+  hover = null;
+  $("tip").style.display = "none";
+  location.hash = encodeURIComponent(displayPath(names));
+  render();
+}
+
+window.addEventListener("hashchange", () => {
+  if (!scan) return;
+  const want = decodeURIComponent(location.hash.slice(1) || "/");
+  const names = [ROOT_NAME, ...want.split("/").filter(Boolean)];
+  if (displayPath(names) !== displayPath(view) && nodeAt(names)) { view = names; render(); }
+});
+
+document.querySelectorAll("#metric button").forEach(b => b.onclick = () => {
+  metric = b.dataset.m;
+  document.querySelectorAll("#metric button").forEach(x => x.classList.toggle("active", x === b));
+  render();
+});
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
+  tab = b.dataset.t;
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("active", x === b));
+  renderList();
+});
+
+async function reveal(path, ev) {
+  ev.stopPropagation();
+  await fetch("/api/reveal", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({path})});
+}
+
+/* ── Wegweiser ─────────────────────────────────────────────────────────── */
+function row({name, cat, num, sub, subIsPath, pct, onclick, path, no, color}) {
+  const el = document.createElement("div");
+  const c = color || CATS[cat][1];
+  el.className = "row" + (onclick ? " click" : "");
+  el.innerHTML = `
+    <span class="shop" style="background:${c};color:${light(c) ? "#1d1030" : "#fff"}" title="${CATS[cat][0]} · ${CATS[cat][2]}">${no}</span>
+    <div class="name"><span>${esc(name)}</span>
+      ${path ? `<button class="reveal" title="Im Finder zeigen">Finder</button>` : ""}</div>
+    <div class="num">${num}</div>
+    ${sub ? `<div class="sub${subIsPath ? " path" : ""}">${sub}</div>` : ""}
+    ${pct != null ? `<div class="mini"><span style="width:${Math.max(pct, .5)}%;background:linear-gradient(90deg,${c},${shade(c, .5)})"></span></div>` : ""}`;
+  if (onclick) el.onclick = onclick;
+  if (path) el.querySelector(".reveal").onclick = ev => reveal(path, ev);
+  return el;
+}
+const shopNo = i => String(i + 1).padStart(2, "0");
+
+function renderList() {
+  const list = $("list");
+  list.replaceChildren();
+  list.scrollTop = 0;
+  const cur = nodeAt(view);
+  if (tab === "content") {
+    const kids = childrenOf(cur, 0), total = kids.reduce((s, c) => s + value(c), 0) || 1;
+    if (!kids.length) list.innerHTML = `<div class="hint">Auf dieser Etage ist nichts geöffnet.</div>`;
+    kids.forEach((c, i) => {
+      const names = [...view, c.n];
+      const d = Math.abs(c.d || 0) >= 1e6 ? ` · <span class="${c.d > 0 ? "up" : "down"}">${signed(c.d)}</span>` : "";
+      list.append(row({
+        name: c.n, cat: c.k, color: c.color, num: metricText(c), pct: (value(c) / total) * 100, no: shopNo(i),
+        sub: c.virtual ? esc(c.hint) : `${metric === "files" ? fmt(c.s) : fmtN(c.f) + " Dateien"} · ${((value(c) / total) * 100).toFixed(1)} %${d}`,
+        onclick: c.c ? () => go(names) : null,
+        path: c.virtual || c.rest ? null : realPath(names),
+      }));
+    });
+  } else if (tab === "files") {
+    const prefix = realPath(view) + "/";
+    const files = scan.top_files.filter(f => view.length === 1 || f.p.startsWith(prefix)).slice(0, 50);
+    if (!files.length) list.innerHTML = `<div class="hint">Keine Dateien ≥ 10 MB auf dieser Etage.</div>`;
+    files.forEach((f, i) => {
+      const rel = f.p.slice(scan.root.length);
+      list.append(row({
+        name: rel.split("/").pop(), cat: catForFile(rel), num: fmt(f.s), no: shopNo(i),
+        sub: esc(rel.split("/").slice(0, -1).join("/")), subIsPath: true, path: f.p,
+        onclick: () => { const names = [ROOT_NAME, ...rel.split("/").filter(Boolean).slice(0, -1)]; while (names.length > 1 && !nodeAt(names)) names.pop(); go(names); },
+      }));
+    });
+  } else {
+    if (!growth || !growth.since) {
+      list.innerHTML = `<div class="hint">Noch kein vorheriger Scan. Nach dem nächsten Scan steht hier, welche Ordner seitdem gewachsen oder geschrumpft sind.</div>`;
+      return;
+    }
+    list.insertAdjacentHTML("beforeend", `<div class="hint">Seit dem Scan ${ago(growth.since)} (${new Date(growth.since).toLocaleString("de-DE", {dateStyle: "short", timeStyle: "short"})})</div>`);
+    for (const [title, rows, cls] of [["▲ Gewachsen", growth.grown, "up"], ["▼ Geschrumpft", growth.shrunk, "down"]]) {
+      list.insertAdjacentHTML("beforeend", `<h3>${title}</h3>`);
+      if (!rows.length) list.insertAdjacentHTML("beforeend", `<div class="hint">nichts ≥ 10 MB</div>`);
+      rows.forEach((g, i) => {
+        const names = g.p.split("/");
+        const n = nodeAt(names);
+        list.append(row({
+          name: names[names.length - 1], cat: n ? n.k : 6, no: shopNo(i), num: `<span class="${cls}">${signed(g.d)}</span>`,
+          sub: `${esc(displayPath(names.slice(0, -1)))} · jetzt ${fmt(g.s)}${g.df ? ` · ${g.df > 0 ? "+" : ""}${fmtN(g.df)} Dateien` : ""}`,
+          subIsPath: true,
+          onclick: n ? () => go(n.c ? names : names.slice(0, -1)) : null,
+          path: n ? realPath(names) : null,
+        }));
+      });
+    }
+  }
+}
+
+function catForFile(rel) {
+  const names = [ROOT_NAME, ...rel.split("/").filter(Boolean)];
+  for (let i = names.length; i > 1; i--) { const n = nodeAt(names.slice(0, i)); if (n) return n.k; }
+  return 6;
+}
+
+/* ── Kopf, Balken, Aufzug ──────────────────────────────────────────────── */
+function renderHeader() {
+  const v = scan.volume, t = scan.tree;
+  const unscanned = Math.max(v.data_used - t.s, 0), other = Math.max(v.total - v.free - v.data_used, 0);
+  const used = v.total - v.free;
+  $("disk-label").innerHTML = `<b>${fmt(used)}</b> von ${fmt(v.total)} vermietet`;
+  $("disk-free").innerHTML = `<b>${fmt(v.free)}</b> Ladenfläche frei`;
+
+  const perCat = new Array(CATS.length).fill(0);
+  (function sum(n, depth) {
+    if (!n.c || depth > 6) { perCat[n.k] += n.s; return; }
+    for (const c of n.c) sum(c, depth + 1);
+  })(t, 0);
+  perCat[7] = unscanned;
+  const segs = perCat.map((s, i) => [CATS[i][0], s, CATS[i][1], i === 7]).filter(s => s[1] > 0);
+  segs.push(["macOS & Swap", other, OTHER_VOL, true]);
+  const bg = (c, hatch) => hatch
+    ? `repeating-linear-gradient(-45deg, ${c} 0 5px, ${shade(c, .25)} 5px 8px)`
+    : `linear-gradient(180deg, ${shade(c, .5)}, ${c} 55%, ${mix(c, "#4a1a86", .3)})`;
+  $("disk-bar").innerHTML = segs.map(([n, s, c, h]) => `<span title="${n}: ${fmt(s)}" style="width:${(s / v.total) * 100}%;background:${bg(c, h)}"></span>`).join("")
+    + `<span title="frei: ${fmt(v.free)}" style="flex:1;background:repeating-conic-gradient(#fff 0 25%, #eee6f8 0 50%) 0 0 / 4px 4px"></span>`;
+  $("disk-legend").innerHTML = segs.map(([n, s, c, h]) => `<span><i style="background:${bg(c, h)}"></i>${n} <b>${fmt(s)}</b></span>`).join("")
+    + `<span><i style="background:#fff"></i>frei <b>${fmt(v.free)}</b></span>`;
+  $("cat-legend").innerHTML = CATS.map(([n, c, shop], i) =>
+    `<div class="store"><i style="background:${bg(i === 7 ? c : c, i === 7)};color:${light(c) ? "#1d1030" : "#fff"}">${String.fromCharCode(65 + i)}</i><span><b>${n}</b><small>${shop}</small></span></div>`).join("")
+    + `<div class="store"><i style="background:${bg(OTHER_VOL, true)}"></i><span><b>macOS & Swap</b><small>Personalbereich</small></span></div>`;
+
+  const priv = scan.privileged ? "vollständig (root)"
+    : `<span class="warn" title="Für einen vollständigen Scan einmal im Terminal 'sudo -v' ausführen und neu scannen">🔒 ohne sudo — ${scan.unreadable.length} Ordner nicht lesbar</span>`;
+  $("meta").innerHTML = `Scan ${ago(scan.generated)} · ${fmtN(t.f)} Dateien · ${scan.duration_s} s · ${priv}`;
+
+  const biggest = (t.c || []).slice().sort((a, b) => b.s - a.s)[0];
+  $("ticker").textContent = [
+    "Willkommen in der Plaza Data-Volume", `${fmt(used)} von ${fmt(v.total)} vermietet`, `${fmt(v.free)} Ladenfläche frei`,
+    `${fmtN(t.f)} Artikel im Sortiment`, biggest ? `Größter Mieter: /${biggest.n} mit ${fmt(biggest.s)}` : "",
+    `Letzte Inventur ${ago(scan.generated)}`, "Bitte lassen Sie Ihre Caches nicht unbeaufsichtigt",
+  ].filter(Boolean).join("   ✦   ") + "   ✦";
+}
+
+function renderCrumbs() {
+  const c = $("crumbs");
+  c.replaceChildren();
+  view.forEach((name, i) => {
+    if (i) { const s = document.createElement("span"); s.className = "sep"; s.textContent = "▸"; c.append(s); }
+    const b = document.createElement("button");
+    b.className = "floor-btn" + (i === view.length - 1 ? " cur" : "");
+    b.title = `${floorName(i)} · ${i === 0 ? "Macintosh HD" : displayPath(view.slice(0, i + 1))}`;
+    b.innerHTML = `<i>${i === 0 ? "EG" : i}</i><span>${esc(i === 0 ? "Macintosh HD" : name)}</span>`;
+    b.onclick = () => go(view.slice(0, i + 1));
+    c.append(b);
+  });
+  const depth = view.length;
+  $("lcd-arrow").textContent = depth >= lastDepth ? "▲" : "▼";
+  $("lcd-floor").textContent = floorName(depth - 1);
+  lastDepth = depth;
+  const cur = nodeAt(view);
+  $("map-title").textContent = `Lageplan · ${floorName(depth - 1)} · ${depth === 1 ? "Macintosh HD" : view[view.length - 1]}`;
+  $("st-left").textContent = cur ? `${childrenOf(cur, 0).length} Läden auf dieser Etage · Klick: Etage höher · Doppelklick: im Finder` : "";
+}
+
+function render() {
+  if (!nodeAt(view)) view = [ROOT_NAME];
+  renderCrumbs();
+  draw();
+  renderList();
+}
+
+/* ── Laden & Scan (NOW LOADING) ────────────────────────────────────────── */
+async function load() {
+  const [s, g] = await Promise.all([
+    fetch("/scans/latest.json").then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch("/scans/growth.json").then(r => r.ok ? r.json() : null).catch(() => null),
+  ]);
+  scan = s; growth = g;
+  if (!scan) {
+    $("meta").textContent = "Noch kein Scan vorhanden — läuft gleich los.";
+    $("empty").hidden = false; $("empty").innerHTML = "<b>COMING SOON</b>Der erste Scan dauert etwa eine Minute …";
+    return false;
+  }
+  const want = decodeURIComponent(location.hash.slice(1) || "/");
+  view = [ROOT_NAME, ...want.split("/").filter(Boolean)];
+  lastDepth = view.length;
+  renderHeader();
+  render();
+  return true;
+}
+
+const ANNOUNCE = [
+  "Das Personal zählt jede Datei einzeln.", "Rolltreppe zu /Users ist in Betrieb.", "Kasse 3 ist jetzt geöffnet.",
+  "Bitte lassen Sie Ihre Caches nicht unbeaufsichtigt.", "Nächster Halt: ~/Library.", "Der Brunnen im Atrium nimmt keine Bytes an.",
+  "Bitte bleiben Sie hinter der gelben Linie.",
+];
+let polling = null, tickN = 0;
+async function poll() {
+  const st = await fetch("/api/status").then(r => r.json()).catch(() => null);
+  const btn = $("scan");
+  if (st && st.running) {
+    btn.disabled = true;
+    btn.textContent = st.progress_files ? `Scanne … ${fmtN(st.progress_files)}` : "Scanne …";
+    btn.title = "";
+    $("loading").hidden = false;
+    $("nl-count").textContent = st.progress_files ? `${fmtN(st.progress_files)} Dateien gezählt` : "Türen werden aufgeschlossen …";
+    $("nl-msg").textContent = ANNOUNCE[tickN++ % ANNOUNCE.length];
+    if (!polling) polling = setInterval(poll, 1500);
+  } else {
+    btn.disabled = false;
+    btn.textContent = "Jetzt scannen";
+    btn.title = st && !st.sudo_ticket ? "Kein sudo-Ticket: Scan läuft ohne root. Vorher im Terminal 'sudo -v' für einen vollständigen Scan." : "Vollständiger Scan mit root-Rechten";
+    $("loading").hidden = true;
+    if (polling) { clearInterval(polling); polling = null; await load(); }
+  }
+}
+$("scan").onclick = async () => {
+  $("scan").disabled = true;
+  $("loading").hidden = false;
+  $("nl-count").textContent = "Türen werden aufgeschlossen …";
+  $("nl-msg").textContent = ANNOUNCE[0];
+  await fetch("/api/scan", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"}).catch(() => null);
+  setTimeout(poll, 400);
+};
+
+function clock() { $("clock").textContent = new Date().toLocaleTimeString("de-DE", {hour: "2-digit", minute: "2-digit"}); }
+clock(); setInterval(clock, 20000);
+
+new ResizeObserver(() => scan && draw()).observe($("map"));
+// Deep-Link: ?tab=growth&metric=growth
+const qs = new URLSearchParams(location.search);
+function preselect(group, attr, val) {
+  const b = val && document.querySelector(`${group} button[data-${attr}="${val}"]`);
+  if (b) document.querySelectorAll(`${group} button`).forEach(x => x.classList.toggle("active", x === b));
+  return !!b;
+}
+if (preselect("#metric", "m", qs.get("metric"))) metric = qs.get("metric");
+if (preselect("#tabs", "t", qs.get("tab"))) tab = qs.get("tab");
+load().then(poll);
+</script>
+</body>
+</html>

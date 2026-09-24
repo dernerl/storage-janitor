@@ -66,6 +66,30 @@ Version pro Gerät reicht). Details: `docs/adr/0002-caches-ausserhalb-library-ca
 
 Output: `reports/latest.md`, `state.json` (machine-readable), macOS-Notification.
 
+## 🗺️ Dashboard — wo liegt der Platz? (à la WinDirStat/TreeSize)
+
+Eine Treemap der ganzen Platte auf `localhost`: jedes Rechteck ist ein Ordner oder eine Datei,
+die Fläche ist ihre Größe. Klick zoomt hinein, die Seitenleiste listet Inhalt, größte Dateien
+und was seit dem letzten Scan gewachsen ist.
+
+```bash
+./dashboard.sh open        # Server starten (127.0.0.1:8935) + Browser; erster Scan startet automatisch
+./dashboard.sh scan        # neuen Scan im Hintergrund starten (~1 min)
+./dashboard.sh status | stop
+python3 disk-scan.py       # Scan im Vordergrund, mit Zusammenfassung
+```
+
+- **Metriken:** Größe · Anzahl Dateien (findet `node_modules`-artige Dateifluten) · Wachstum.
+- **Klick** zoomt in den Ordner, **Doppelklick** oder **⌘-Klick** zeigt die Kachel unter der Maus im Finder.
+- **Vollständig nur mit sudo:** Ist ein sudo-Ticket da (`sudo -v` im Terminal), scannt der
+  Scanner als root, sonst als User („🔒 ohne sudo“). Es wird nie nach einem Passwort gefragt.
+- **Full Disk Access:** Auch root umgeht TCC nicht. Für Mail, Messages oder
+  `~/Library/Containers` braucht Terminal bzw. SwiftBar Full Disk Access; alles Unlesbare
+  erscheint als „Nicht erfasst“ statt still zu fehlen.
+- **SwiftBar:** Das Storage-Janitor-Menü zeigt Dashboard-Link, die größten Ordner, die
+  Zuwächse und „Jetzt scannen“; es startet höchstens einmal täglich einen Hintergrund-Scan.
+- Scans liegen in `scans/` (14 werden behalten). Details: `docs/adr/0003-treemap-dashboard.md`.
+
 ### Scheduling & Menüleiste
 
 Wie bei [workbench-janitor](https://github.com/dernerl/workbench-janitor): Scheduling über
