@@ -300,7 +300,7 @@
         <canvas id="map"></canvas>
         <div class="empty" id="empty" hidden></div>
       </div>
-      <div class="map-status"><span id="st-left">Klick: Etage höher · Doppelklick: im Finder</span><span class="fit" id="st-right"></span></div>
+      <div class="map-status"><span id="st-left">Klick: Ordner öffnen · Doppelklick: im Finder</span><span class="fit" id="st-right"></span></div>
     </section>
     <aside class="win side">
       <div class="titlebar"><h2>Wegweiser</h2><span class="jp">案内板</span><span class="tb-btns"><i></i><i></i></span></div>
@@ -320,7 +320,7 @@
     <div class="titlebar"><h2>Ladenverzeichnis · Kategorien</h2><span class="jp">ショップ</span><span class="tb-btns"><i></i><i></i></span></div>
     <div class="wbody">
       <div class="stores" id="cat-legend"></div>
-      <div class="note">Fläche = belegter Platz · Ordner unter 1 % ihres Parents sind zu „weitere“ zusammengefasst · schraffiert = nicht begehbare Bereiche</div>
+      <div class="note">Fläche = belegter Platz · Ordner unter 1 % ihres Parents sind zu „kleinere Ordner“ zusammengefasst · Körnung = lose Dateien (fein = viel Kleinkram, grob = wenige große) · Eselsohr = einzelne große Datei · schraffiert = nicht begehbare Bereiche</div>
     </div>
   </section>
 </div>
@@ -496,6 +496,8 @@ function draw() {
           for (let i = -r.h; i < r.w; i += 16) { ctx.beginPath(); ctx.moveTo(r.x + i, r.y + r.h); ctx.lineTo(r.x + i + r.h, r.y); ctx.stroke(); }
           ctx.restore();
         }
+        if (n.loose) grain(ctx, r, n);
+        else if (n.file) dogEar(ctx, r, color);
       } else {
         ctx.fillStyle = mix(color, "#1d1030", .72);
         ctx.fillRect(r.x, r.y, r.w, r.h);
@@ -515,6 +517,43 @@ function draw() {
   }
   layout(cur, view, 0, 0, W, H, 0);
   paint();
+}
+
+/* Lose Dateien als Körnung: ein Korn ≈ eine typische Datei. Feines Raster = viel Kleinkram,
+   grobes Raster = wenige größere Dateien (Kantenlänge wächst logarithmisch mit Ø-Dateigröße). */
+const grainCache = {};
+function grainCell(n) {
+  const avg = n.s / Math.max(n.f, 1);
+  return Math.round(Math.min(26, 3 + 4 * Math.log10(Math.max(avg, 4096) / 4096)));
+}
+function grain(ctx, r, n) {
+  const cell = grainCell(n);
+  const key = cell + "@" + (window.devicePixelRatio || 1);
+  if (!grainCache[key]) {
+    const t = document.createElement("canvas"), dpr = window.devicePixelRatio || 1;
+    t.width = t.height = cell * dpr;
+    const c = t.getContext("2d");
+    c.scale(dpr, dpr);
+    const k = Math.max(1, cell * .55), o = (cell - k) / 2;
+    c.fillStyle = "rgba(29,16,48,.30)"; c.fillRect(o, o, k, k);
+    c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(o, o, k, Math.max(.6, k * .2));
+    const pat = ctx.createPattern(t, "repeat");
+    pat.setTransform(new DOMMatrix().scale(1 / dpr));
+    grainCache[key] = pat;
+  }
+  ctx.save();
+  ctx.fillStyle = grainCache[key];
+  ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.restore();
+}
+/* Einzelne große Datei: Eselsohr oben rechts */
+function dogEar(ctx, r, color) {
+  const e = Math.min(14, r.w / 4, r.h / 4);
+  if (e < 4) return;
+  ctx.fillStyle = "#1d1030";
+  ctx.beginPath(); ctx.moveTo(r.x + r.w - e, r.y); ctx.lineTo(r.x + r.w, r.y); ctx.lineTo(r.x + r.w, r.y + e); ctx.fill();
+  ctx.fillStyle = shade(color, .6);
+  ctx.beginPath(); ctx.moveTo(r.x + r.w - e, r.y); ctx.lineTo(r.x + r.w - e, r.y + e); ctx.lineTo(r.x + r.w, r.y + e); ctx.fill();
 }
 
 function label(ctx, r, n, bg, size) {
@@ -537,10 +576,10 @@ function paint() {
   ctx.drawImage(base, 0, 0);
   if (!hover) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const topRect = rects.find(r => r.depth === 0 && r.names[view.length] === hover.names[view.length]);
-  if (topRect && topRect !== hover && topRect.node.c) {
+  const target = clickTarget(hover);
+  if (target && target !== hover) {
     ctx.setLineDash([6, 4]); ctx.strokeStyle = "#01cdfe"; ctx.lineWidth = 2;
-    ctx.strokeRect(topRect.x + 1, topRect.y + 1, topRect.w - 2, topRect.h - 2);
+    ctx.strokeRect(target.x + 1, target.y + 1, target.w - 2, target.h - 2);
     ctx.setLineDash([]);
   }
   ctx.strokeStyle = "#fffb96"; ctx.lineWidth = 2.5; ctx.shadowColor = "#ff71ce"; ctx.shadowBlur = 8;
@@ -555,10 +594,18 @@ function metricText(n) {
 }
 
 /* ── Interaktion ───────────────────────────────────────────────────────── */
+/* Klickziel = der Ordner unter der Maus: die Kachel selbst, wenn sie ein Ordner ist, sonst der
+   Ordner, in dem die Datei / der Sammelposten liegt. Auf der aktuellen Etage selbst → kein Ziel. */
+function clickTarget(r) {
+  if (!r || r.node.virtual) return null;
+  if (r.node.c) return r;
+  return rects.find(t => t.depth === r.depth - 1 && t.node.c && t.names.length === r.names.length - 1
+                         && t.names.every((n, i) => n === r.names[i])) || null;
+}
 function clickHint(r) {
   if (r.node.virtual) return "";
-  const top = rects.find(t => t.depth === 0 && t.names[view.length] === r.names[view.length]);
-  return top && top.node.c ? " · Klick: Etage höher · Doppelklick: im Finder" : " · Klick: im Finder zeigen";
+  const t = clickTarget(r);
+  return t ? ` · Klick: ${esc(t.node.n)} öffnen · Doppelklick: im Finder` : " · Klick: im Finder zeigen";
 }
 
 function hit(ev) {
@@ -574,7 +621,7 @@ $("map").addEventListener("mousemove", ev => {
   if (!r) { tip.style.display = "none"; $("st-right").textContent = ""; return; }
   const n = r.node, cat = CATS[n.k];
   const parts = [`<b>${esc(n.n)}</b>`,
-    n.virtual ? esc(n.hint) : `${fmt(n.s)} · ${fmtN(n.f)} Dateien` + (Math.abs(n.d || 0) >= 1e6 ? ` · <span class="${n.d > 0 ? "up" : "down"}">${signed(n.d)}</span> seit letztem Scan` : ""),
+    n.virtual ? esc(n.hint) : `${fmt(n.s)} · ${fmtN(n.f)} Dateien` + (n.rest && n.f ? ` · Ø ${fmt(Math.round(n.s / n.f))} pro Datei` : "") + (Math.abs(n.d || 0) >= 1e6 ? ` · <span class="${n.d > 0 ? "up" : "down"}">${signed(n.d)}</span> seit letztem Scan` : ""),
     n.virtual ? "" : `<span class="p">${esc(displayPath(r.names))}</span>`,
     `<span class="tag" style="background:${colorOf(n)};color:${light(colorOf(n)) ? "#1d1030" : "#fff"}">${cat[0]}</span><span class="p">${cat[2]}${clickHint(r)}</span>`];
   tip.innerHTML = parts.filter(Boolean).join("<br>");
@@ -585,7 +632,7 @@ $("map").addEventListener("mousemove", ev => {
   $("st-right").textContent = n.virtual ? n.n : displayPath(r.names);
 });
 $("map").addEventListener("mouseleave", () => { hover = null; $("tip").style.display = "none"; $("st-right").textContent = ""; paint(); });
-/* Einfachklick: eine Etage höher (ist der Laden auf dieser Etage eine Datei → Finder).
+/* Einfachklick: in den Ordner unter der Maus (clickTarget); Datei auf dieser Etage → Finder.
    Doppelklick oder ⌘-Klick: genau die Kachel unter der Maus (wie im Tooltip) im Finder zeigen.
    Der Einfachklick wartet kurz, damit ein Doppelklick nicht vorher schon hineinzoomt. */
 function finderTarget(r) {
@@ -603,10 +650,9 @@ $("map").addEventListener("click", ev => {
     return;
   }
   clickTimer = setTimeout(() => {
-    const top = rects.find(t => t.depth === 0 && t.names[view.length] === r.names[view.length]);
-    if (!top) return;
-    if (top.node.c) return go(top.names);
-    const names = finderTarget(top);
+    const t = clickTarget(r);
+    if (t) return go(t.names);
+    const names = finderTarget(r);
     if (names) revealTile(names);
   }, 250);
 });
@@ -787,7 +833,7 @@ function renderCrumbs() {
   lastDepth = depth;
   const cur = nodeAt(view);
   $("map-title").textContent = `Lageplan · ${floorName(depth - 1)} · ${depth === 1 ? "Macintosh HD" : view[view.length - 1]}`;
-  $("st-left").textContent = cur ? `${childrenOf(cur, 0).length} Läden auf dieser Etage · Klick: Etage höher · Doppelklick: im Finder` : "";
+  $("st-left").textContent = cur ? `${childrenOf(cur, 0).length} Läden auf dieser Etage · Klick: Ordner öffnen · Doppelklick: im Finder` : "";
 }
 
 function render() {

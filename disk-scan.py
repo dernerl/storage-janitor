@@ -133,23 +133,31 @@ class Scanner:
         node = {"n": name, "s": size, "f": files, "k": node_cat}
         candidates = children + big_files
         if candidates:
-            node["c"] = prune(candidates, size, files)
+            loose = (own_size - sum(b["s"] for b in big_files), own_files - len(big_files))
+            node["c"] = prune(candidates, size, files, loose, node_cat)
         return node
 
 
-def prune(candidates: list[dict], size: int, files: int) -> list[dict]:
+def prune(candidates: list[dict], size: int, files: int, loose: tuple[int, int], cat: int) -> list[dict]:
+    """Behält große Kinder; der Rest wird getrennt zusammengefasst — „(N kleinere Ordner)“ und
+    „(N lose Dateien)“ (direkt im Ordner liegende Dateien unter der Schwelle, `loose`: Größe, Anzahl),
+    damit das Dashboard Kleinkram von wenigen großen Dateien unterscheiden kann."""
     keep, rest = [], []
     for c in sorted(candidates, key=lambda c: -c["s"]):
         big = c["s"] >= max(MIN_SIZE, size * REL)
         many = not c.get("file") and c["f"] >= max(MIN_FILES, files * REL)
         (keep if (big or many) and len(keep) < MAX_CHILDREN else rest).append(c)
-    rest_size = size - sum(c["s"] for c in keep)
-    rest_files = files - sum(c["f"] for c in keep)
-    if rest_size > 0 or rest_files > 0:
-        # Kategorie des Rests = die der größten verworfenen Kinder; ohne Kinder die des Parents
-        k = rest[0]["k"] if rest else (keep[0]["k"] if keep else 6)
-        keep.append({"n": f"({len(rest)} weitere · lose Dateien)" if rest else "(Dateien)",
-                     "s": max(rest_size, 0), "f": max(rest_files, 0), "k": k, "rest": 1})
+    dirs = [c for c in rest if not c.get("file")]
+    dropped_files = [c for c in rest if c.get("file")]
+    if dirs:
+        keep.append({"n": f"({len(dirs)} kleinere{'r' if len(dirs) == 1 else ''} Ordner)", "s": sum(c["s"] for c in dirs),
+                     "f": sum(c["f"] for c in dirs), "k": dirs[0]["k"], "rest": 1, "dirs": len(dirs)})
+    lsize = loose[0] + sum(c["s"] for c in dropped_files)
+    lfiles = loose[1] + len(dropped_files)
+    if lfiles:
+        # Kategorie der losen Dateien = die der größten von ihnen, sonst die des Ordners
+        k = dropped_files[0]["k"] if dropped_files else cat
+        keep.append({"n": f"({lfiles} lose Datei{'' if lfiles == 1 else 'en'})", "s": lsize, "f": lfiles, "k": k, "rest": 1, "loose": 1})
     return keep
 
 
