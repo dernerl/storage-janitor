@@ -6,7 +6,8 @@ sonst als User — dann landen nicht lesbare Bereiche unter „Nicht erfasst“.
 schreibt sein JSON in einen vom User geöffneten File-Descriptor, damit nichts in `scans/`
 root gehört.
 
-Output: scans/latest.json (Baum + Metadaten), scans/<stamp>.json (Rotation), scans/growth.json.
+Output: scans/latest.json (Baum + Metadaten), scans/<stamp>.json (Rotation), scans/growth.json,
+scans/history.jsonl (schlanke Zeile pro Scan für die Chronik, wird nie rotiert).
 """
 from __future__ import annotations
 
@@ -26,6 +27,9 @@ LOCK = SCANS / ".scan.lock"
 PROGRESS = SCANS / ".progress"
 ROOT = "/System/Volumes/Data"
 KEEP_SCANS = 14
+HISTORY = SCANS / "history.jsonl"
+HIST_MIN = 100 * 1024**2   # Chronik: Ordner ab 100 MB …
+HIST_DEPTH = 6             # … bis Tiefe 6 (/Users/hug/Library/Caches/… = 5) — ~35 KB pro Scan
 
 # Pruning: ein Kind bleibt als eigener Knoten, wenn es relativ zum Parent groß genug ist
 # (Größe oder Dateianzahl) und absolut nicht winzig — der Rest wird zu „(N weitere)“.
@@ -225,6 +229,65 @@ def growth_list(new: dict, old: dict, sign: int, limit: int) -> list[dict]:
     return sorted(rows, key=lambda r: -r["d"] * sign)[:limit]
 
 
+# ── Chronik ──────────────────────────────────────────────────────────────────
+def history_record(scan: dict, src: str) -> dict:
+    """Eine Chronik-Zeile: Volume, Kategorie-Summen (gleiche Regel wie der Balken im Dashboard:
+    Blätter bzw. Knoten ab Tiefe 7 zählen) und große Ordner in MB."""
+    cats = [0] * len(CATEGORIES)
+
+    def cat_sum(n: dict, depth: int) -> None:
+        if not n.get("c") or depth > 6:
+            cats[n["k"]] += n["s"]
+            return
+        for c in n["c"]:
+            cat_sum(c, depth + 1)
+
+    dirs: dict[str, int] = {}
+
+    def walk(n: dict, path: str, depth: int) -> None:
+        for c in n.get("c", []):
+            if c.get("rest") or c.get("file") or c["s"] < HIST_MIN:
+                continue
+            p = f"{path}/{c['n']}"
+            dirs[p] = round(c["s"] / 1e6)
+            if depth < HIST_DEPTH:
+                walk(c, p, depth + 1)
+
+    cat_sum(scan["tree"], 0)
+    walk(scan["tree"], "", 1)
+    return {"t": scan["generated"], "src": src, "priv": scan["privileged"], "locked": len(scan.get("unreadable", [])),
+            "vol": scan["volume"],
+            "tree": scan["tree"]["s"], "cats": cats, "dirs": dirs}
+
+
+def update_history() -> int:
+    """Fehlende Scans aus der Rotation (scans/20*.json) in history.jsonl nachtragen — beim ersten
+    Mal also alle vorhandenen. Gibt die Zahl neuer Zeilen zurück."""
+    rows: dict[str, dict] = {}
+    if HISTORY.exists():
+        for line in HISTORY.read_text(encoding="utf-8").splitlines():
+            try:
+                r = json.loads(line)
+                rows[r["src"]] = r
+            except (ValueError, KeyError):
+                continue
+    added = 0
+    for f in sorted(SCANS.glob("20*.json")):
+        if f.name in rows:
+            continue
+        try:
+            rows[f.name] = history_record(json.loads(f.read_text(encoding="utf-8")), f.name)
+            added += 1
+        except (OSError, ValueError, KeyError):
+            continue
+    if added:
+        tmp = HISTORY.with_suffix(".tmp")
+        tmp.write_text("".join(json.dumps(r, separators=(",", ":"), ensure_ascii=False) + "\n"
+                               for r in sorted(rows.values(), key=lambda r: r["t"])), encoding="utf-8")
+        tmp.replace(HISTORY)
+    return added
+
+
 # ── Orchestrierung ───────────────────────────────────────────────────────────
 def pid_alive(pid: int) -> bool:
     try:
@@ -291,7 +354,13 @@ def main() -> int:
     ap.add_argument("--stdout", action="store_true", help="intern: nur scannen, JSON auf stdout")
     ap.add_argument("--background", action="store_true", help="detached starten und sofort zurückkehren")
     ap.add_argument("--max-age-hours", type=float, help="nur scannen, wenn der letzte Scan älter ist")
+    ap.add_argument("--history", action="store_true", help="nur Chronik aus vorhandenen Scans nachtragen")
     args = ap.parse_args()
+
+    if args.history:
+        SCANS.mkdir(exist_ok=True)
+        print(f"{update_history()} Scans in die Chronik übernommen")
+        return 0
 
     if args.stdout:
         json.dump(run_scan(), sys.stdout, separators=(",", ":"))
@@ -340,6 +409,7 @@ def main() -> int:
         tmp.write_text(body, encoding="utf-8")
         tmp.replace(previous)
         (SCANS / "growth.json").write_text(json.dumps(growth, ensure_ascii=False, indent=1), encoding="utf-8")
+        update_history()  # vor der Rotation, damit kein Scan verloren geht
         for f in sorted(SCANS.glob("20*.json"))[:-KEEP_SCANS]:
             f.unlink()
 

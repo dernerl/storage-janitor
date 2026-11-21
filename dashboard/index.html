@@ -25,6 +25,7 @@
     --thin: inset -1px -1px #fff, inset 1px 1px var(--win-lo);
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }  /* eigene display-Regeln dürfen hidden nie überstimmen */
   html { background: var(--night); }
   body {
     margin: 0; min-height: 100vh; background: var(--night); color: var(--ink);
@@ -73,16 +74,6 @@
   .meta { display: inline-block; max-width: 100%; background: rgba(29, 16, 48, .78); color: #f3eaff; border: 1px solid rgba(255, 255, 255, .25);
     padding: 3px 10px; font-size: 12px; border-radius: 2px; }
   .meta .warn { color: var(--lemon); }
-  .scan-box { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
-  .scan-btn { position: relative; border: 0; cursor: pointer; padding: 11px 22px 10px; font: 700 14px/1 var(--ui); letter-spacing: .06em; color: var(--ink);
-    background: linear-gradient(180deg, #fffdf0 0%, #fffb96 45%, #ffb3e1 55%, #ff71ce 100%);
-    box-shadow: 0 0 0 2px var(--ink), 4px 4px 0 2px #01cdfe, 0 0 24px rgba(255, 113, 206, .7);
-    transition: transform .12s, box-shadow .12s; text-transform: uppercase; }
-  .scan-btn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 0 0 0 2px var(--ink), 6px 6px 0 2px #01cdfe, 0 0 32px rgba(255, 113, 206, .9); }
-  .scan-btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 0 0 0 2px var(--ink), 1px 1px 0 2px #01cdfe; }
-  .scan-btn:disabled { cursor: progress; background: linear-gradient(180deg, #e9e0f7, #c7b6e6); }
-  .scan-btn:focus-visible { outline: 2px dashed #fff; outline-offset: 5px; }
-  .scan-sub { font: 11px/1 var(--ui); color: #fff; letter-spacing: .1em; background: rgba(29, 16, 48, .78); padding: 3px 8px; }
 
   /* ═══ Fenster im 95er-Stil, pastell ═══ */
   .win { background: var(--win); padding: 3px; box-shadow: var(--out), 8px 10px 0 rgba(10, 0, 30, .45); display: flex; flex-direction: column; min-width: 0; }
@@ -122,8 +113,6 @@
   .floor-btn.cur { box-shadow: var(--in); background: #f7f2ff; font-weight: 700; }
   .floor-btn.cur i { background: radial-gradient(circle at 35% 30%, #fffef0, #fffb96 45%, #ff9ad5); box-shadow: 0 0 0 1px var(--win-dk), 0 0 10px 2px rgba(255, 251, 150, .9); }
   .crumbs .sep { color: var(--win-lo); font-size: 11px; }
-  .seg { display: flex; flex-direction: row; flex-wrap: wrap; gap: 3px; padding: 6px; align-items: center; }
-  .seg .lbl { font-size: 11px; color: var(--muted); margin: 0 4px; text-transform: uppercase; letter-spacing: .08em; }
   .btn95 { border: 0; background: var(--win); box-shadow: var(--out); padding: 6px 12px 5px; cursor: pointer; font-size: 12.5px; color: var(--ink); }
   .btn95:hover { background: #f1ebfb; }
   .btn95:focus-visible { outline: 1px dotted var(--ink); outline-offset: -5px; }
@@ -186,6 +175,32 @@
   .store small { display: block; font-size: 11px; color: var(--muted); }
   .note { font-size: 11.5px; color: var(--muted); margin: 7px 2px 0; }
 
+  /* Chronik */
+  .ch-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px 16px; flex-wrap: wrap; padding: 2px 4px 10px; }
+  .ch-range { display: flex; gap: 3px; align-items: center; }
+  .ch-range .lbl { font-size: 11px; color: var(--muted); margin-right: 4px; text-transform: uppercase; letter-spacing: .08em; }
+  .ch-stats { font-size: 13px; display: flex; gap: 4px 16px; flex-wrap: wrap; }
+  .ch-stats b { font: 400 22px/1 var(--lcd); }
+  .ch-grid { display: grid; grid-template-columns: minmax(0, 1fr) 370px; gap: 14px; }
+  @media (max-width: 960px) { .ch-grid { grid-template-columns: minmax(0, 1fr); } }
+  .ch-h { font: 700 11px/1 var(--ui); text-transform: uppercase; letter-spacing: .12em; color: #fff; margin: 4px 0 5px; padding: 5px 8px;
+    background: linear-gradient(90deg, #6a2fc0, #b967ff 60%, transparent); }
+  .chart-body { padding: 4px; background: var(--night); box-shadow: var(--in); }
+  .chart-body canvas { display: block; width: 100%; height: 240px; cursor: crosshair; }
+  .ch-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; margin: 6px 2px 14px; }
+  .ch-legend i { display: inline-block; width: 11px; height: 11px; margin-right: 5px; vertical-align: -1px; box-shadow: 0 0 0 1px var(--ink); }
+  .ch-legend .ln { width: 16px; height: 3px; vertical-align: 3px; box-shadow: none; }
+  .ch-legend .dot { width: 13px; height: 13px; background: radial-gradient(circle, #fff 0 3.5px, var(--night) 4px); }
+  .ch-legend .dot.hollow { background: radial-gradient(circle, var(--night) 0 2.2px, #fff 2.7px 4px, var(--night) 4.5px); }
+  .ch-side { display: flex; flex-direction: column; min-height: 0; }
+  .ch-side .list { max-height: 560px; }
+  .ch-note { font-size: 11.5px; color: var(--muted); margin: 0 2px 6px; }
+  .ch-note .warn { color: #a0105a; }
+  .row .spark { grid-column: 2 / -1; width: 100%; height: 20px; margin-top: 2px; }
+  #tip .sw { display: inline-block; width: 9px; height: 9px; margin-right: 5px; box-shadow: 0 0 0 1px var(--ink); }
+  #tip table { border-collapse: collapse; margin-top: 3px; }
+  #tip td { padding: 0 0 0 8px; } #tip td:first-child { padding: 0; } #tip td.n { text-align: right; }
+
   /* Tooltip */
   #tip { position: fixed; pointer-events: none; z-index: 60; display: none; max-width: 420px; background: #fffde0; color: var(--ink);
     border: 1px solid var(--ink); box-shadow: 4px 4px 0 rgba(185, 103, 255, .7); padding: 6px 9px; font-size: 12px; }
@@ -218,6 +233,46 @@
     text-shadow: 0 0 6px rgba(5, 255, 161, .6); padding-left: 100%; animation: tick 40s linear -9s infinite; will-change: transform; }
   @keyframes tick { to { transform: translateX(-100%); } }
   .clock { flex: none; box-shadow: var(--thin); padding: 0 10px; height: 28px; display: flex; align-items: center; font-size: 12px; }
+  button.start { border: 0; background: var(--win); cursor: pointer; color: var(--ink); }
+  button.start[aria-expanded="true"] { box-shadow: var(--in); background: repeating-conic-gradient(#fff 0 25%, #efe6fb 0 50%) 0 0 / 4px 4px; }
+  button.start:focus-visible { outline: 1px dotted var(--ink); outline-offset: -5px; }
+
+  /* Menüs (Kontextmenü, Startmenü) im 95er-Stil */
+  .menu95 { position: fixed; z-index: 70; display: flex; background: var(--win); box-shadow: var(--out), 4px 4px 0 rgba(10, 0, 30, .45);
+    padding: 3px; min-width: 190px; font-size: 12.5px; color: var(--ink); }
+  .menu95[hidden] { display: none; }
+  .menu95 .items { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .menu95 button { display: flex; align-items: center; gap: 8px; border: 0; background: none; text-align: left; padding: 5px 18px 5px 6px; cursor: pointer; white-space: nowrap; }
+  .menu95 button .ic { width: 18px; text-align: center; flex: none; }
+  .menu95 button .sub { margin-left: auto; padding-left: 18px; font-size: 9px; }
+  .menu95 button:hover:not(:disabled), .menu95 button:focus-visible, .menu95 button.open { background: linear-gradient(90deg, #6a2fc0, #b967ff); color: #fff; outline: none; }
+  .menu95 button:disabled { color: var(--win-lo); text-shadow: 1px 1px #fff; cursor: default; }
+  .menu95 button.danger:hover:not(:disabled), .menu95 button.danger:focus-visible { background: linear-gradient(90deg, #a0105a, #ff71ce); }
+  .menu95 hr { border: 0; border-top: 1px solid var(--win-lo); border-bottom: 1px solid #fff; margin: 3px 2px; }
+  .menu95 .banner { width: 26px; flex: none; margin-right: 2px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px;
+    background: linear-gradient(0deg, #6a2fc0, #b967ff 45%, #ff71ce); color: #fff; }
+  .menu95 .banner span { writing-mode: vertical-rl; transform: rotate(180deg); font: italic 700 17px/1 var(--serif); letter-spacing: .04em; white-space: nowrap;
+    text-shadow: 1px 1px 0 #2a0b52; }
+  .menu95 .banner b { color: var(--lemon); }
+  .menu95.start-menu button { padding-top: 8px; padding-bottom: 8px; }
+  .menu95.start-menu button .ic { font-size: 16px; width: 22px; }
+
+  /* Dialog (Bestätigung, Eigenschaften) */
+  .modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: rgba(29, 16, 48, .35); padding: 16px; }
+  .modal[hidden] { display: none; }
+  .modal .win { width: min(440px, 100%); }
+  .dlg { display: flex; gap: 14px; padding: 14px 12px 8px; font-size: 13px; }
+  .dlg .big { font-size: 34px; line-height: 1; flex: none; }
+  .dlg .txt { min-width: 0; flex: 1; }
+  .dlg .txt p { margin: 0 0 8px; }
+  .dlg .path { word-break: break-all; color: var(--muted); font-size: 12px; }
+  .dlg .warn { background: #fff0f7; box-shadow: var(--thin); padding: 6px 8px; color: #a0105a; font-weight: 700; }
+  .dlg dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; margin: 0; }
+  .dlg dt { color: var(--muted); }
+  .dlg dd { margin: 0; word-break: break-all; }
+  .dlg-btns { display: flex; justify-content: flex-end; gap: 6px; padding: 6px 10px 10px; }
+  .dlg-btns .btn95 { min-width: 86px; }
+  .dlg-btns .btn95.danger { color: #a0105a; font-weight: 700; }
   @media (max-width: 700px) {
     .fw { display: none; }
     .sun { left: 78%; width: 170px; height: 170px; top: calc(var(--hz) - 125px); }
@@ -265,10 +320,6 @@
       <h1>Plaza Data‑Volume</h1>
       <div class="meta" id="meta">Türen öffnen sich …</div>
     </div>
-    <div class="scan-box">
-      <button class="scan-btn" id="scan">Jetzt scannen</button>
-      <span class="scan-sub">★ Inventur aller Läden ★</span>
-    </div>
   </header>
 
   <section class="win disk">
@@ -285,12 +336,6 @@
       <div class="lcd-box" title="Aktuelle Etage"><span class="arrow" id="lcd-arrow">▲</span><span id="lcd-floor">EG</span></div>
       <nav class="crumbs" id="crumbs"></nav>
     </div>
-    <div class="win seg" id="metric" role="group" aria-label="Metrik">
-      <span class="lbl">Fläche nach</span>
-      <button class="btn95 active" data-m="size">Größe</button>
-      <button class="btn95" data-m="files">Anzahl Dateien</button>
-      <button class="btn95" data-m="growth">Wachstum</button>
-    </div>
   </div>
 
   <div class="main">
@@ -300,7 +345,7 @@
         <canvas id="map"></canvas>
         <div class="empty" id="empty" hidden></div>
       </div>
-      <div class="map-status"><span id="st-left">Klick: Ordner öffnen · Doppelklick: im Finder</span><span class="fit" id="st-right"></span></div>
+      <div class="map-status"><span id="st-left">Klick: Ordner öffnen · Doppelklick: im Finder · Rechtsklick: Menü</span><span class="fit" id="st-right"></span></div>
     </section>
     <aside class="win side">
       <div class="titlebar"><h2>Wegweiser</h2><span class="jp">案内板</span><span class="tb-btns"><i></i><i></i></span></div>
@@ -315,6 +360,36 @@
       </div>
     </aside>
   </div>
+
+  <section class="win chronik" id="chronik" hidden>
+    <div class="titlebar"><h2>Chronik · Mietentwicklung</h2><span class="jp">履歴</span><span class="tb-btns"><i></i><i></i></span></div>
+    <div class="wbody">
+      <div class="ch-bar">
+        <div class="ch-range" id="ch-range" role="group" aria-label="Zeitraum">
+          <span class="lbl">Zeitraum</span>
+          <button class="btn95" data-r="7">7 Tage</button>
+          <button class="btn95 active" data-r="30">30 Tage</button>
+          <button class="btn95" data-r="0">Alles</button>
+        </div>
+        <div class="ch-stats" id="ch-stats"></div>
+      </div>
+      <div class="ch-grid">
+        <div>
+          <h3 class="ch-h">Belegt</h3>
+          <div class="chart-body"><canvas id="ch-used" aria-label="Belegter Speicher über die Zeit"></canvas></div>
+          <div class="ch-legend" id="ch-used-legend"></div>
+          <h3 class="ch-h">Nach Kategorie · pro Scan</h3>
+          <div class="chart-body"><canvas id="ch-cats" aria-label="Belegung nach Kategorie pro Scan"></canvas></div>
+          <div class="ch-legend" id="ch-cats-legend"></div>
+        </div>
+        <div class="ch-side">
+          <h3 class="ch-h">Größte Veränderungen</h3>
+          <div class="ch-note" id="ch-compare"></div>
+          <div class="list" id="ch-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="win directory">
     <div class="titlebar"><h2>Ladenverzeichnis · Kategorien</h2><span class="jp">ショップ</span><span class="tb-btns"><i></i><i></i></span></div>
@@ -336,11 +411,20 @@
 </section>
 
 <div class="taskbar">
-  <div class="start"><span class="logo"></span>Plaza</div>
+  <button class="start" id="start" aria-haspopup="menu" aria-expanded="false"><span class="logo"></span>Plaza</button>
   <div class="ticker"><span id="ticker">✦ Willkommen in der Plaza Data-Volume ✦</span></div>
   <div class="clock" id="clock">--:--</div>
 </div>
 <div id="tip"></div>
+<div class="menu95" id="ctx" role="menu" hidden></div>
+<div class="menu95" id="ctx-sub" role="menu" hidden></div>
+<div class="modal" id="modal" hidden>
+  <section class="win" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="titlebar"><h2 id="modal-title"></h2><span class="tb-btns"><i></i></span></div>
+    <div class="dlg"><div class="big" id="modal-icon"></div><div class="txt" id="modal-body"></div></div>
+    <div class="dlg-btns" id="modal-btns"></div>
+  </section>
+</div>
 
 <script>
 /* Kategorien: [Name, Farbe, Laden-Spitzname] */
@@ -456,6 +540,7 @@ const colorOf = n => n.color || CATS[n.k][1];
 function draw() {
   const cv = $("map"), dpr = window.devicePixelRatio || 1;
   const W = cv.clientWidth, H = cv.clientHeight;
+  if (!W || !H) return;   // Lageplan ausgeblendet (Chronik) — beim Einblenden zeichnet der ResizeObserver neu
   cv.width = base.width = W * dpr; cv.height = base.height = H * dpr;
   const ctx = base.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -615,7 +700,16 @@ function hit(ev) {
   return found;
 }
 
+function showTip(html, ev) {
+  const tip = $("tip");
+  tip.innerHTML = html;
+  tip.style.display = "block";
+  const tx = Math.min(ev.clientX + 16, innerWidth - tip.offsetWidth - 8);
+  const ty = ev.clientY + 18 + tip.offsetHeight > innerHeight ? ev.clientY - tip.offsetHeight - 10 : ev.clientY + 18;
+  tip.style.left = tx + "px"; tip.style.top = ty + "px";
+}
 $("map").addEventListener("mousemove", ev => {
+  if (ctxTile) return;
   const r = hit(ev), tip = $("tip");
   if (r !== hover) { hover = r; paint(); }
   if (!r) { tip.style.display = "none"; $("st-right").textContent = ""; return; }
@@ -624,14 +718,10 @@ $("map").addEventListener("mousemove", ev => {
     n.virtual ? esc(n.hint) : `${fmt(n.s)} · ${fmtN(n.f)} Dateien` + (n.rest && n.f ? ` · Ø ${fmt(Math.round(n.s / n.f))} pro Datei` : "") + (Math.abs(n.d || 0) >= 1e6 ? ` · <span class="${n.d > 0 ? "up" : "down"}">${signed(n.d)}</span> seit letztem Scan` : ""),
     n.virtual ? "" : `<span class="p">${esc(displayPath(r.names))}</span>`,
     `<span class="tag" style="background:${colorOf(n)};color:${light(colorOf(n)) ? "#1d1030" : "#fff"}">${cat[0]}</span><span class="p">${cat[2]}${clickHint(r)}</span>`];
-  tip.innerHTML = parts.filter(Boolean).join("<br>");
-  tip.style.display = "block";
-  const tx = Math.min(ev.clientX + 16, innerWidth - tip.offsetWidth - 8);
-  const ty = ev.clientY + 18 + tip.offsetHeight > innerHeight ? ev.clientY - tip.offsetHeight - 10 : ev.clientY + 18;
-  tip.style.left = tx + "px"; tip.style.top = ty + "px";
+  showTip(parts.filter(Boolean).join("<br>"), ev);
   $("st-right").textContent = n.virtual ? n.n : displayPath(r.names);
 });
-$("map").addEventListener("mouseleave", () => { hover = null; $("tip").style.display = "none"; $("st-right").textContent = ""; paint(); });
+$("map").addEventListener("mouseleave", () => { if (ctxTile) return; hover = null; $("tip").style.display = "none"; $("st-right").textContent = ""; paint(); });
 /* Einfachklick: in den Ordner unter der Maus (clickTarget); Datei auf dieser Etage → Finder.
    Doppelklick oder ⌘-Klick: genau die Kachel unter der Maus (wie im Tooltip) im Finder zeigen.
    Der Einfachklick wartet kurz, damit ein Doppelklick nicht vorher schon hineinzoomt. */
@@ -641,6 +731,7 @@ function finderTarget(r) {
 }
 let clickTimer = null;
 $("map").addEventListener("click", ev => {
+  if (swallowClick) { swallowClick = false; return; }
   const r = hit(ev);
   if (!r) return;
   clearTimeout(clickTimer);
@@ -660,14 +751,293 @@ $("map").addEventListener("click", ev => {
 async function revealTile(names) {
   const res = await fetch("/api/reveal", {method: "POST", headers: {"Content-Type": "application/json"},
                                           body: JSON.stringify({path: realPath(names)})}).catch(() => null);
-  const ok = res && res.ok;
-  const el = $("st-left"), before = el.textContent;
-  el.textContent = ok ? `📂 Im Finder: ${displayPath(names)}` : `⚠ Nicht gefunden (seit dem Scan gelöscht?): ${displayPath(names)}`;
-  clearTimeout(revealTile.t);
-  revealTile.t = setTimeout(() => { el.textContent = before; }, 3500);
+  flash(res && res.ok ? `📂 Im Finder: ${displayPath(names)}` : `⚠ Nicht gefunden (seit dem Scan gelöscht?): ${displayPath(names)}`);
+}
+/* Kurzmeldung in der Statuszeile unter der Karte */
+function flash(msg) {
+  const el = $("st-left");
+  if (!flash.t) flash.before = el.textContent;
+  el.textContent = msg;
+  clearTimeout(flash.t);
+  flash.t = setTimeout(() => { el.textContent = flash.before; flash.t = null; }, 3500);
 }
 
+/* ── Menüs (Kontextmenü, Startmenü) ────────────────────────────────────── */
+/* Ein Eintrag: {icon, label, action, disabled, danger, title, sub: [...]} oder "-" als Trenner. */
+let menuOwner = null, ctxTile = null;
+function fillMenu(box, items, isSub) {
+  box.replaceChildren();
+  for (const it of items) {
+    if (it === "-") { box.append(document.createElement("hr")); continue; }
+    const b = document.createElement("button");
+    b.type = "button"; b.setAttribute("role", "menuitem");
+    b.disabled = !!it.disabled;
+    if (it.danger) b.className = "danger";
+    if (it.title) b.title = it.title;
+    b.innerHTML = `<span class="ic">${it.icon || ""}</span><span>${esc(it.label)}</span>${it.sub ? '<span class="sub">▶</span>' : ""}`;
+    if (it.sub) {
+      const open = () => openSub(b, it.sub);
+      b.addEventListener("mouseenter", open);
+      b.onclick = () => { open(); $("ctx-sub").querySelector("button:not(:disabled)")?.focus(); };
+    } else {
+      if (!isSub) b.addEventListener("mouseenter", closeSub);
+      b.onclick = () => { closeMenus(); it.action(); };
+    }
+    box.append(b);
+  }
+}
+/* Menü an (x, y) aufklappen; läuft es unten oder rechts aus dem Fenster, klappt es zur anderen Seite */
+function place(m, x, y) {
+  const w = m.offsetWidth, h = m.offsetHeight;
+  m.style.left = Math.max(4, Math.min(x, innerWidth - w - 4)) + "px";
+  m.style.top = (y + h > innerHeight - 4 ? Math.max(4, y - h) : y) + "px";
+}
+function openMenu(items, x, y, opt = {}) {
+  closeMenus();
+  const m = $("ctx");
+  m.className = "menu95" + (opt.cls ? " " + opt.cls : "");
+  m.innerHTML = (opt.banner ? `<div class="banner"><span>${opt.banner}</span></div>` : "") + `<div class="items"></div>`;
+  fillMenu(m.querySelector(".items"), items, false);
+  m.hidden = false;
+  place(m, x, y);
+  menuOwner = opt.owner || null;
+  if (menuOwner) menuOwner.setAttribute("aria-expanded", "true");
+  $("tip").style.display = "none";
+  m.querySelector("button:not(:disabled)")?.focus({preventScroll: true});
+}
+function openSub(btn, items) {
+  const sub = $("ctx-sub");
+  $("ctx").querySelectorAll("button.open").forEach(b => b.classList.remove("open"));
+  btn.classList.add("open");
+  sub.innerHTML = `<div class="items"></div>`;
+  fillMenu(sub.firstChild, items, true);
+  sub.hidden = false;
+  const r = btn.getBoundingClientRect(), main = $("ctx").getBoundingClientRect();
+  const x = main.right + sub.offsetWidth > innerWidth - 4 ? main.left - sub.offsetWidth : main.right - 3;
+  place(sub, x, r.top - 3);
+}
+function closeSub() {
+  $("ctx-sub").hidden = true;
+  $("ctx").querySelectorAll("button.open").forEach(b => b.classList.remove("open"));
+}
+function closeMenus() {
+  if ($("ctx").hidden) return;
+  closeSub();
+  $("ctx").hidden = true;
+  if (menuOwner) menuOwner.setAttribute("aria-expanded", "false");
+  menuOwner = null;
+  if (ctxTile) { ctxTile = null; hover = null; paint(); }
+}
+let swallowClick = false;   // Klick, der nur ein offenes Menü schließt, löst nichts auf der Karte aus
+document.addEventListener("mousedown", ev => {
+  if ($("ctx").hidden || ev.target.closest(".menu95") || ev.target.closest("#start")) return;
+  swallowClick = ev.button === 0 && ev.target === $("map");
+  closeMenus();
+});
+window.addEventListener("blur", closeMenus);
+window.addEventListener("resize", closeMenus);
+document.addEventListener("scroll", closeMenus, true);
+document.addEventListener("keydown", ev => {
+  if ($("ctx").hidden) return;
+  const box = document.activeElement?.closest(".menu95");
+  if (ev.key === "Escape") { ev.preventDefault(); if (box && box.id === "ctx-sub") { closeSub(); $("ctx").querySelector("button.open, button")?.focus(); } else { const o = menuOwner; closeMenus(); o?.focus(); } return; }
+  if (!box) return;
+  const btns = [...box.querySelectorAll("button:not(:disabled)")], i = btns.indexOf(document.activeElement);
+  if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+    ev.preventDefault();
+    btns[(i + (ev.key === "ArrowDown" ? 1 : -1) + btns.length) % btns.length]?.focus();
+  } else if (ev.key === "ArrowRight" && document.activeElement.querySelector(".sub")) {
+    ev.preventDefault(); document.activeElement.click();
+  } else if (ev.key === "ArrowLeft" && box.id === "ctx-sub") {
+    ev.preventDefault(); closeSub(); $("ctx").querySelector("button.open, button")?.focus();
+  }
+});
+
+/* ── Rechtsklick auf eine Kachel ───────────────────────────────────────── */
+let home = null;   // Home-Ordner auf dem Data-Volume, kommt von /api/status
+/* Spiegel von deletable() im Server (der prüft selbst noch einmal): im Home ab 2 Ebenen,
+   oder ein Programm unter /Applications, das nicht in einer anderen .app steckt. */
+function deletable(path) {
+  if (home && path.startsWith(home + "/")) return path.slice(home.length + 1).split("/").length >= 2;
+  const apps = scan.root + "/Applications/";
+  if (!path.startsWith(apps)) return false;
+  const parts = path.slice(apps.length).split("/");
+  return parts[parts.length - 1].endsWith(".app") && !parts.slice(0, -1).some(p => p.endsWith(".app"));
+}
+const LOCKED = "Gesperrt: Löschen nur im Home-Ordner (ab zwei Ebenen) und für Programme unter /Applications";
+
+function tileMenu(r) {
+  const n = r.node, real = !n.virtual && !n.rest, finder = finderTarget(r);
+  const canDel = real && deletable(realPath(r.names));
+  return [
+    {icon: "📂", label: "Öffnen", disabled: !n.c, action: () => go(r.names)},
+    {icon: "🔍", label: "Im Finder zeigen", disabled: !finder, action: () => revealTile(finder)},
+    {icon: "📋", label: "Pfad kopieren", disabled: !finder, action: () => copyPath(finder)},
+    "-",
+    {icon: "🗑", label: "In den Papierkorb legen…", disabled: !canDel, title: real && !canDel ? LOCKED : "", action: () => deleteTile(r, false)},
+    {icon: "⛔", label: "Endgültig löschen…", danger: true, disabled: !canDel, title: real && !canDel ? LOCKED : "", action: () => deleteTile(r, true)},
+    "-",
+    {icon: "ℹ️", label: "Eigenschaften", action: () => properties(r)},
+  ];
+}
+$("map").addEventListener("contextmenu", ev => {
+  ev.preventDefault();
+  const r = hit(ev);
+  clearTimeout(clickTimer);
+  if (!r) return closeMenus();
+  openMenu(tileMenu(r), ev.clientX, ev.clientY);
+  ctxTile = hover = r;   // Kachel bleibt markiert, solange das Menü offen ist
+  paint();
+});
+
+async function copyPath(names) {
+  const ok = await navigator.clipboard.writeText(displayPath(names)).then(() => true, () => false);
+  flash(ok ? `📋 Kopiert: ${displayPath(names)}` : "⚠ Zwischenablage nicht verfügbar");
+}
+
+/* ── Dialoge ───────────────────────────────────────────────────────────── */
+/* Eigener 95er-Dialog statt confirm(): {title, icon, body (HTML), buttons: [{label, value, danger, focus}]}
+   → Promise mit dem value des gedrückten Knopfs, null bei Esc oder Klick daneben. */
+function dialog({title, icon, body, buttons}) {
+  return new Promise(resolve => {
+    const modal = $("modal"), box = $("modal-btns"), back = document.activeElement;
+    $("modal-title").textContent = title;
+    $("modal-icon").textContent = icon;
+    $("modal-body").innerHTML = body;
+    box.replaceChildren();
+    const done = v => {
+      modal.hidden = true; modal.onclick = null;
+      document.removeEventListener("keydown", key, true);
+      back?.focus?.({preventScroll: true});
+      resolve(v);
+    };
+    const key = ev => {
+      if (ev.key === "Escape") { ev.preventDefault(); ev.stopPropagation(); done(null); }
+      if (ev.key === "Tab") {   // Fokus im Dialog halten
+        const els = [...box.querySelectorAll("button")], i = els.indexOf(document.activeElement);
+        ev.preventDefault();
+        els[(i + (ev.shiftKey ? -1 : 1) + els.length) % els.length].focus();
+      }
+    };
+    let first = null;
+    for (const b of buttons) {
+      const el = document.createElement("button");
+      el.className = "btn95" + (b.danger ? " danger" : "");
+      el.textContent = b.label;
+      el.onclick = () => done(b.value);
+      box.append(el);
+      if (b.focus) first = el;
+    }
+    modal.onclick = ev => { if (ev.target === modal) done(null); };
+    document.addEventListener("keydown", key, true);
+    modal.hidden = false;
+    (first || box.querySelector("button")).focus();
+  });
+}
+const info = (title, icon, body) => dialog({title, icon, body, buttons: [{label: "OK", value: true, focus: true}]});
+
+function properties(r) {
+  const n = r.node, cat = CATS[n.k];
+  const type = n.virtual ? "Nicht begehbarer Bereich" : n.loose ? "Lose Dateien (zusammengefasst)"
+    : n.rest ? `${n.dirs || ""} kleinere Ordner (zusammengefasst)` : n.file ? "Datei" : "Ordner";
+  const rows = [["Typ", type], ["Kategorie", `${cat[0]} · ${cat[2]}`]];
+  if (n.virtual) rows.push(["Was ist das?", esc(n.hint)]);
+  else {
+    rows.push(["Ort", esc(displayPath(n.rest ? r.names.slice(0, -1) : r.names))]);
+    rows.push(["Größe", `${fmt(n.s)} (${fmtN(n.s)} Bytes)`]);
+    if (!n.file) rows.push(["Dateien", fmtN(n.f) + (n.f ? ` · Ø ${fmt(Math.round(n.s / n.f))}` : "")]);
+    if (n.d != null) rows.push(["Seit letztem Scan", `<span class="${n.d > 0 ? "up" : n.d < 0 ? "down" : ""}">${signed(n.d)}</span>`]);
+    if (!n.rest) rows.push(["Löschen", deletable(realPath(r.names)) ? "erlaubt" : "gesperrt"]);
+  }
+  info(`Eigenschaften von ${n.n}`, n.virtual ? "🚧" : n.file ? "📄" : n.rest ? "🗃" : "📁",
+    `<dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`);
+}
+
+/* ── Löschen ───────────────────────────────────────────────────────────── */
+async function deleteTile(r, permanent) {
+  const n = r.node, names = r.names;
+  const what = `<p><b>${esc(n.n)}</b> · ${fmt(n.s)}${n.f > 1 ? ` · ${fmtN(n.f)} Dateien` : ""}</p><p class="path">${esc(displayPath(names))}</p>`;
+  const ok = await dialog(permanent
+    ? {title: "Endgültig löschen", icon: "⛔",
+       body: what + `<p class="warn">Wird sofort gelöscht, ohne Umweg über den Papierkorb. Das lässt sich nicht rückgängig machen.</p>`,
+       buttons: [{label: "Endgültig löschen", value: true, danger: true}, {label: "Abbrechen", value: false, focus: true}]}
+    : {title: "In den Papierkorb legen", icon: "🗑",
+       body: what + `<p>Im Finder mit „Zurücklegen“ wiederherstellbar. Platz wird erst frei, wenn der Papierkorb geleert wird.</p>`,
+       buttons: [{label: "In den Papierkorb", value: true, focus: true}, {label: "Abbrechen", value: false}]});
+  if (!ok) return;
+  const res = await fetch("/api/trash", {method: "POST", headers: {"Content-Type": "application/json"},
+                                         body: JSON.stringify({path: realPath(names), permanent})}).catch(() => null);
+  const body = res ? await res.json().catch(() => ({})) : {error: "Server nicht erreichbar."};
+  if (!res || !res.ok) return info("Löschen nicht möglich", "⚠️", `<p>${esc(body.error || "Unbekannter Fehler.")}</p><p class="path">${esc(displayPath(names))}</p>`);
+  dropNode(names, permanent);
+  flash(`${permanent ? "⛔ Endgültig gelöscht" : "🗑 Im Papierkorb"}: ${displayPath(names)} (${fmt(n.s)})`);
+}
+
+/* Gelöschten Knoten lokal austragen, damit Karte und Balken ohne neuen Scan stimmen.
+   Papierkorb: die Größe wandert nach ~/.Trash (gleiches Volume, noch nicht frei);
+   endgültig: der Platz ist frei. */
+function shiftPath(names, ds, df) {
+  for (let i = 1; i <= names.length; i++) { const a = nodeAt(names.slice(0, i)); if (a) { a.s += ds; a.f += df; } }
+}
+function dropNode(names, permanent) {
+  const n = nodeAt(names), parent = nodeAt(names.slice(0, -1));
+  if (!n || !parent) return;
+  shiftPath(names.slice(0, -1), -n.s, -n.f);
+  parent.c = parent.c.filter(c => c !== n);
+  if (!parent.c.length) delete parent.c;
+  const path = realPath(names);
+  scan.top_files = scan.top_files.filter(f => f.p !== path && !f.p.startsWith(path + "/"));
+  if (permanent) { scan.volume.data_used -= n.s; scan.volume.free += n.s; }
+  else if (home) {
+    const homeNames = [ROOT_NAME, ...home.slice(scan.root.length).split("/").filter(Boolean)], h = nodeAt(homeNames);
+    if (h) {
+      if (!(h.c || []).some(c => c.n === ".Trash")) (h.c ||= []).push({n: ".Trash", s: 0, f: 0, k: 6});
+      shiftPath([...homeNames, ".Trash"], n.s, n.f);
+    }
+  }
+  renderHeader();
+  render();
+}
+
+/* ── Startmenü „Plaza“ ─────────────────────────────────────────────────── */
+async function openTarget(target) {
+  const res = await fetch("/api/open", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({target})}).catch(() => null);
+  if (!res || !res.ok) flash("⚠ Konnte nicht geöffnet werden");
+}
+function about() {
+  if (!scan) return info("Über Plaza", "🌴", "<p>Noch kein Scan vorhanden.</p>");
+  const v = scan.volume;
+  info("Über Plaza Data-Volume", "🌴", `<p><b>Plaza Data-Volume</b> — Belegungsplan für Macintosh HD.</p><dl>
+    <dt>Letzter Scan</dt><dd>${new Date(scan.generated).toLocaleString("de-DE", {dateStyle: "medium", timeStyle: "short"})} (${ago(scan.generated)})</dd>
+    <dt>Dauer</dt><dd>${scan.duration_s} s · ${fmtN(scan.tree.f)} Dateien</dd>
+    <dt>Rechte</dt><dd>${scan.privileged ? "root (vollständig)" : "User (ohne sudo)"}</dd>
+    <dt>Nicht lesbar</dt><dd>${fmtN(scan.unreadable.length)}${scan.unreadable.length >= 500 ? "+" : ""} Ordner (macOS-Datenschutz)</dd>
+    <dt>Belegt</dt><dd>${fmt(v.total - v.free)} von ${fmt(v.total)} · ${fmt(v.free)} frei</dd></dl>`);
+}
+function startMenu() {
+  return [
+    {icon: "🔄", label: scanning ? "Scan läuft …" : "Jetzt scannen", disabled: scanning, action: startScan,
+     title: sudoTicket ? "Vollständiger Scan mit root-Rechten" : "Kein sudo-Ticket: Scan läuft ohne root. Vorher im Terminal 'sudo -v' für einen vollständigen Scan."},
+    {icon: "🏬", label: "Zum Erdgeschoss", disabled: page === "map" && view.length <= 1, action: () => go([ROOT_NAME])},
+    page === "map" ? {icon: "📈", label: "Chronik", action: () => { location.hash = "chronik"; }}
+                   : {icon: "🗺", label: "Lageplan", action: () => go(view)},
+    {icon: "👁", label: "Fläche nach", sub: Object.entries(METRICS).map(([m, label]) =>
+      ({icon: m === metric ? "●" : "", label, action: () => setMetric(m)}))},
+    "-",
+    {icon: "🗑", label: "Papierkorb öffnen", action: () => openTarget("trash")},
+    {icon: "💽", label: "macOS-Speicherverwaltung", action: () => openTarget("storage")},
+    "-",
+    {icon: "🌴", label: "Über Plaza…", action: about},
+  ];
+}
+$("start").onclick = () => {
+  if (menuOwner === $("start")) return closeMenus();
+  const r = $("start").getBoundingClientRect();
+  openMenu(startMenu(), r.left, r.top - 1, {banner: "Plaza <b>Data-Volume</b>", cls: "start-menu", owner: $("start")});
+};
+
 function go(names) {
+  if (page !== "map") showPage("map");
   view = names;
   hover = null;
   $("tip").style.display = "none";
@@ -676,17 +1046,19 @@ function go(names) {
 }
 
 window.addEventListener("hashchange", () => {
+  if (location.hash === "#chronik") return page === "history" || showPage("history");
+  if (page !== "map") { showPage("map"); render(); }
   if (!scan) return;
   const want = decodeURIComponent(location.hash.slice(1) || "/");
   const names = [ROOT_NAME, ...want.split("/").filter(Boolean)];
   if (displayPath(names) !== displayPath(view) && nodeAt(names)) { view = names; render(); }
 });
 
-document.querySelectorAll("#metric button").forEach(b => b.onclick = () => {
-  metric = b.dataset.m;
-  document.querySelectorAll("#metric button").forEach(x => x.classList.toggle("active", x === b));
+const METRICS = {size: "Größe", files: "Anzahl Dateien", growth: "Wachstum"};
+function setMetric(m) {
+  metric = m;
   render();
-});
+}
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
   tab = b.dataset.t;
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("active", x === b));
@@ -832,8 +1204,9 @@ function renderCrumbs() {
   $("lcd-floor").textContent = floorName(depth - 1);
   lastDepth = depth;
   const cur = nodeAt(view);
-  $("map-title").textContent = `Lageplan · ${floorName(depth - 1)} · ${depth === 1 ? "Macintosh HD" : view[view.length - 1]}`;
-  $("st-left").textContent = cur ? `${childrenOf(cur, 0).length} Läden auf dieser Etage · Klick: Ordner öffnen · Doppelklick: im Finder` : "";
+  $("map-title").textContent = `Lageplan · ${floorName(depth - 1)} · ${depth === 1 ? "Macintosh HD" : view[view.length - 1]}`
+    + (metric === "size" ? "" : ` · Fläche nach ${METRICS[metric]}`);
+  $("st-left").textContent = cur ? `${childrenOf(cur, 0).length} Läden auf dieser Etage · Klick: Ordner öffnen · Doppelklick: im Finder · Rechtsklick: Menü` : "";
 }
 
 function render() {
@@ -842,6 +1215,278 @@ function render() {
   draw();
   renderList();
 }
+
+/* ── Chronik ───────────────────────────────────────────────────────────── */
+/* Stapelreihenfolge (unten → oben) so gewählt, dass benachbarte Flächen auch bei Rot-Grün-
+   Schwäche unterscheidbar bleiben (dataviz validate_palette.js: schlechtestes Paar ΔE 19,7).
+   „Nicht erfasst“ und „macOS & Swap“ liegen schraffiert obendrauf. */
+const STACK = [0, 4, 1, 6, 2, 3, 5];
+const DAY = 864e5, SURFACE = "#1d1030", AXIS_INK = "#cbbde2", MARK = "#ffffff";
+const PAD = {l: 52, r: 14, t: 14, b: 24};
+let page = "map", hist = null, range = 30, chHover = {used: null, cats: null};
+const swatch = (c, hatch) => hatch ? `repeating-linear-gradient(-45deg, ${c} 0 3px, ${shade(c, .3)} 3px 5px)` : c;
+const fmtWhen = t => new Date(t).toLocaleString("de-DE", {dateStyle: "short", timeStyle: "short"});
+const gb = (v, step) => (v / 1e9).toFixed(step < 1e9 ? 1 : 0) + " GB";
+
+function showPage(p) {
+  page = p;
+  for (const sel of [".toolbar", ".main", ".directory"]) document.querySelector(sel).hidden = p !== "map";
+  $("chronik").hidden = p !== "history";
+  $("tip").style.display = "none";
+  if (p === "history") loadHistory();
+}
+async function loadHistory() {
+  hist = await fetch("/api/history").then(r => r.ok ? r.json() : null).catch(() => null);
+  renderHistory();
+}
+
+/* Scans und Janitor-Tageswerte auf den gewählten Zeitraum zuschneiden */
+function histData() {
+  const scans = (hist?.scans || []).map(r => {
+    const v = r.vol, used = v.total - v.free;
+    return {t: new Date(r.t).getTime(), r, used, free: v.free, unscanned: Math.max(v.data_used - r.tree, 0),
+            other: Math.max(used - v.data_used, 0), over: Math.max(r.tree - v.data_used, 0)};
+  });
+  const daily = (hist?.daily || []).map(d => ({t: new Date(d.t).getTime(), used: d.used, free: d.free}));
+  const t1 = Date.now();
+  const first = Math.min(...scans.map(s => s.t), ...daily.map(d => d.t), t1 - DAY);
+  const t0 = range ? t1 - range * DAY : first;
+  return {t0, t1, scans: scans.filter(s => s.t >= t0), daily: daily.filter(d => d.t >= t0)};
+}
+
+function setupCanvas(cv) {
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = SURFACE; ctx.fillRect(0, 0, W, H);
+  ctx.font = "11px Tahoma, Verdana, sans-serif";
+  return {ctx, W, H};
+}
+function niceStep(raw) {
+  const p = 10 ** Math.floor(Math.log10(raw)), m = raw / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
+}
+/* Achsen: zurückhaltendes Raster, GB links, Tage unten. Gibt die Skalen zurück. */
+function frame(ctx, W, H, t0, t1, lo, hi) {
+  const x = t => PAD.l + (t - t0) / (t1 - t0) * (W - PAD.l - PAD.r);
+  const y = v => H - PAD.b - (v - lo) / (hi - lo) * (H - PAD.t - PAD.b);
+  const step = niceStep((hi - lo) / 4);
+  ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.lineWidth = 1;
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+    ctx.strokeStyle = "rgba(255,255,255,.08)";
+    ctx.beginPath(); ctx.moveTo(PAD.l, Math.round(y(v)) + .5); ctx.lineTo(W - PAD.r, Math.round(y(v)) + .5); ctx.stroke();
+    ctx.fillStyle = AXIS_INK; ctx.fillText(gb(v, step), PAD.l - 6, y(v));
+  }
+  const span = (t1 - t0) / DAY, room = Math.max(2, Math.floor((W - PAD.l - PAD.r) / 64));
+  const stepD = [1, 2, 3, 7, 14, 30, 61, 91].find(d => span / d <= room) || 182;
+  const d = new Date(t0); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 1);
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (; d.getTime() <= t1; d.setDate(d.getDate() + stepD)) {
+    const px = x(d.getTime());
+    ctx.strokeStyle = "rgba(255,255,255,.18)";
+    ctx.beginPath(); ctx.moveTo(px, H - PAD.b); ctx.lineTo(px, H - PAD.b + 4); ctx.stroke();
+    ctx.fillStyle = AXIS_INK; ctx.fillText(d.toLocaleDateString("de-DE", {day: "2-digit", month: "2-digit"}), px, H - PAD.b + 7);
+  }
+  return {x, y};
+}
+/* Scan-Marker: gefüllt = mit root, hohl = ohne sudo (unvollständig) — mit Fuge zur Fläche */
+function scanDot(ctx, px, py, priv) {
+  ctx.beginPath(); ctx.arc(px, py, 6.5, 0, 7); ctx.fillStyle = SURFACE; ctx.fill();
+  ctx.beginPath(); ctx.arc(px, py, priv ? 4.5 : 3.6, 0, 7);
+  if (priv) { ctx.fillStyle = MARK; ctx.fill(); } else { ctx.strokeStyle = MARK; ctx.lineWidth = 1.8; ctx.stroke(); }
+}
+function crosshair(ctx, px, H) {
+  ctx.save(); ctx.setLineDash([4, 3]); ctx.strokeStyle = "rgba(255,251,150,.75)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(Math.round(px) + .5, PAD.t); ctx.lineTo(Math.round(px) + .5, H - PAD.b); ctx.stroke();
+  ctx.restore();
+}
+function noData(ctx, W, H, msg) {
+  ctx.fillStyle = AXIS_INK; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(msg, W / 2, H / 2);
+}
+
+function drawUsed(d) {
+  const cv = $("ch-used"), {ctx, W, H} = setupCanvas(cv);
+  const pts = [...d.daily.map(p => ({...p, kind: "daily"})),
+               ...d.scans.map(s => ({t: s.t, used: s.used, free: s.free, kind: "scan", priv: s.r.priv}))].sort((a, b) => a.t - b.t);
+  cv._pts = [];
+  if (!pts.length) return noData(ctx, W, H, "Keine Daten in diesem Zeitraum");
+  let lo = Math.min(...pts.map(p => p.used)), hi = Math.max(...pts.map(p => p.used));
+  const pad = Math.max((hi - lo) * .12, 2e9); lo -= pad; hi += pad;
+  const {x, y} = frame(ctx, W, H, d.t0, d.t1, lo, hi);
+  ctx.strokeStyle = "#01cdfe"; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.lineCap = "round";
+  ctx.beginPath();
+  d.daily.forEach((p, i) => i ? ctx.lineTo(x(p.t), y(p.used)) : ctx.moveTo(x(p.t), y(p.used)));
+  ctx.stroke();
+  if (d.daily.length === 1) { ctx.beginPath(); ctx.arc(x(d.daily[0].t), y(d.daily[0].used), 2.5, 0, 7); ctx.fillStyle = "#01cdfe"; ctx.fill(); }
+  for (const s of d.scans) scanDot(ctx, x(s.t), y(s.used), s.r.priv);
+  cv._pts = pts.map(p => ({...p, px: x(p.t), py: y(p.used)}));
+  const h = chHover.used && cv._pts.find(p => p.t === chHover.used.t && p.kind === chHover.used.kind);
+  if (h) {
+    crosshair(ctx, h.px, H);
+    ctx.beginPath(); ctx.arc(h.px, h.py, 7.5, 0, 7); ctx.strokeStyle = "#fffb96"; ctx.lineWidth = 2; ctx.stroke();
+  }
+}
+
+function catSeries(scans) {
+  return [...STACK.filter(k => scans.some(s => s.r.cats[k] > 0)).map(k => ({name: CATS[k][0], color: CATS[k][1], v: s => s.r.cats[k] || 0})),
+    {name: "Nicht erfasst", color: CATS[7][1], hatch: true, v: s => s.unscanned},
+    {name: "macOS & Swap", color: OTHER_VOL, hatch: true, v: s => s.other}];
+}
+function drawCats(d) {
+  const cv = $("ch-cats"), {ctx, W, H} = setupCanvas(cv);
+  cv._pts = [];
+  if (!d.scans.length) return noData(ctx, W, H, "Keine Scans in diesem Zeitraum");
+  const series = catSeries(d.scans);
+  const tops = d.scans.map(s => series.reduce((a, se) => a + se.v(s), 0));
+  const {x, y} = frame(ctx, W, H, d.t0, d.t1, 0, Math.max(...tops) * 1.08);
+  const xs = d.scans.map(s => x(s.t));
+  if (xs[0] - PAD.l > 140) {
+    ctx.fillStyle = AXIS_INK; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(`Scans erst ab ${new Date(d.scans[0].t).toLocaleDateString("de-DE", {day: "2-digit", month: "2-digit"})}`, (PAD.l + xs[0]) / 2, (H - PAD.b) / 2);
+  }
+  let base = d.scans.map(() => 0);
+  for (const se of series) {
+    const top = base.map((b, i) => b + se.v(d.scans[i]));
+    ctx.beginPath();
+    if (xs.length === 1) ctx.rect(xs[0] - 9, y(top[0]), 18, y(base[0]) - y(top[0]));
+    else {
+      xs.forEach((px, i) => i ? ctx.lineTo(px, y(top[i])) : ctx.moveTo(px, y(top[i])));
+      for (let i = xs.length - 1; i >= 0; i--) ctx.lineTo(xs[i], y(base[i]));
+      ctx.closePath();
+    }
+    ctx.fillStyle = se.color; ctx.fill();
+    if (se.hatch) {   // schraffiert wie in der Treemap: nicht begehbare Bereiche
+      ctx.save(); ctx.clip();
+      ctx.strokeStyle = "rgba(255,255,255,.16)"; ctx.lineWidth = 3;
+      for (let i = -H; i < W; i += 9) { ctx.beginPath(); ctx.moveTo(i, H); ctx.lineTo(i + H, 0); ctx.stroke(); }
+      ctx.restore();
+    }
+    if (xs.length > 1) {   // 2px Fuge zur nächsten Fläche
+      ctx.strokeStyle = SURFACE; ctx.lineWidth = 2; ctx.lineJoin = "round";
+      ctx.beginPath(); xs.forEach((px, i) => i ? ctx.lineTo(px, y(top[i])) : ctx.moveTo(px, y(top[i]))); ctx.stroke();
+    }
+    base = top;
+  }
+  d.scans.forEach((s, i) => {
+    scanDot(ctx, xs[i], y(tops[i]), s.r.priv);
+    if (s.over > 1e9) { ctx.fillStyle = "#fffb96"; ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.font = "700 12px Tahoma, Verdana, sans-serif"; ctx.fillText("!", xs[i], y(tops[i]) - 7); }
+  });
+  cv._pts = d.scans.map((s, i) => ({t: s.t, s, px: xs[i], top: tops[i]}));
+  const h = chHover.cats && cv._pts.find(p => p.t === chHover.cats.t);
+  if (h) crosshair(ctx, h.px, H);
+  cv._series = series;
+}
+
+function renderCharts() {
+  if (!hist) return;
+  const d = histData();
+  drawUsed(d);
+  drawCats(d);
+  return d;
+}
+
+/* Tooltips der Charts: nächster Punkt zur Maus (x), Fadenkreuz + Werte */
+function chartHover(cv, key, html) {
+  cv.addEventListener("mousemove", ev => {
+    const pts = cv._pts || [];
+    if (!pts.length) return;
+    const bx = ev.clientX - cv.getBoundingClientRect().left;
+    const best = pts.reduce((a, p) => Math.abs(p.px - bx) < Math.abs(a.px - bx) ? p : a);
+    if (chHover[key]?.t !== best.t || chHover[key]?.kind !== best.kind) { chHover[key] = best; renderCharts(); }
+    showTip(html(best, cv), ev);
+  });
+  cv.addEventListener("mouseleave", () => { chHover[key] = null; $("tip").style.display = "none"; renderCharts(); });
+}
+const privNote = priv => priv ? "Scan mit root" : "Scan ohne sudo — unvollständig, „Nicht erfasst“ ist größer";
+chartHover($("ch-used"), "used", p => `<b>${fmtWhen(p.t)}</b><br>Belegt ${fmt(p.used)} · frei ${fmt(p.free)}<br>`
+  + `<span class="p">${p.kind === "scan" ? privNote(p.priv) : "Tageswert des Janitors (letzter Lauf des Tages)"}</span>`);
+chartHover($("ch-cats"), "cats", (p, cv) => {
+  const rows = cv._series.slice().reverse().filter(se => se.v(p.s) > 0).map(se =>
+    `<tr><td><span class="sw" style="background:${swatch(se.color, se.hatch)}"></span>${se.name}</td><td class="n">${fmt(se.v(p.s))}</td></tr>`).join("");
+  return `<b>${fmtWhen(p.t)}</b> · ${fmt(p.top)}<table>${rows}</table><span class="p">${privNote(p.s.r.priv)}`
+    + (p.s.over > 1e9 ? `<br>⚠ Scan zählt ${fmt(p.s.over)} mehr als belegt (APFS-Klone doppelt gezählt)` : "") + "</span>";
+});
+
+/* Größte Veränderungen: erster gegen letzten Scan im Zeitraum — wenn möglich ein vergleichbarer
+   (gleiche Rechte und ähnlich viele gesperrte Ordner, also gleicher Festplattenvollzugriff), sonst
+   verfälschen gesperrte Ordner (~/Library …) den Vergleich. Vorfahren, deren Änderung ein
+   Kind schon zu ≥ 80 % erklärt, fallen weg (wie growth.json). Werte in MB, ab 200 MB. */
+const comparable = (a, b) => a.r.priv === b.r.priv && a.r.locked != null && Math.abs(a.r.locked - b.r.locked) <= 50;
+function changes(scans) {
+  if (scans.length < 2) return null;
+  const end = scans[scans.length - 1];
+  const start = scans.find(s => s !== end && comparable(s, end)) || scans[0];
+  const a = start.r.dirs, b = end.r.dirs, deltas = {};
+  for (const p of new Set([...Object.keys(a), ...Object.keys(b)])) deltas[p] = (b[p] || 0) - (a[p] || 0);
+  const depth = p => p.split("/").length;
+  const rows = Object.entries(deltas).filter(([p, dv]) => Math.abs(dv) >= 200 && !Object.entries(deltas).some(([q, dq]) =>
+    depth(q) === depth(p) + 1 && q.startsWith(p + "/") && dq * Math.sign(dv) >= .8 * Math.abs(dv)))
+    .map(([p, dv]) => ({p, d: dv, now: b[p], was: a[p]}))
+    .sort((x, y) => Math.abs(y.d) - Math.abs(x.d)).slice(0, 25);
+  return {start, end, rows};
+}
+function spark(values, cls) {
+  const ok = values.filter(v => v != null);
+  if (ok.length < 2) return "";
+  const lo = Math.min(...ok), hi = Math.max(...ok), n = values.length - 1;
+  const pts = values.map((v, i) => v == null ? null : `${(i / n) * 100},${18 - ((v - lo) / (hi - lo || 1)) * 16}`).filter(Boolean).join(" ");
+  return `<svg class="spark" viewBox="0 0 100 20" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${cls === "up" ? "#d4145a" : "#00866b"}" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function renderChanges(d) {
+  const list = $("ch-list"), c = changes(d.scans);
+  list.replaceChildren();
+  if (!c) {
+    $("ch-compare").textContent = "";
+    list.innerHTML = `<div class="hint">Für einen Vergleich braucht es mindestens zwei Scans im Zeitraum.</div>`;
+    return;
+  }
+  const rights = comparable(c.start, c.end) ? `vergleichbar (${c.end.r.priv ? "root" : "ohne sudo"}, ${c.end.r.locked} gesperrt)`
+    : `<span class="warn">⚠ nicht vergleichbar (${c.start.r.locked ?? "?"} → ${c.end.r.locked ?? "?"} gesperrte Ordner${c.start.r.priv !== c.end.r.priv ? ", andere Rechte" : ""}) — geschützte Ordner können verfälscht sein</span>`;
+  $("ch-compare").innerHTML = `${fmtWhen(c.start.t)} → ${fmtWhen(c.end.t)} · ${rights}`;
+  if (!c.rows.length) list.innerHTML = `<div class="hint">Keine Ordner haben sich um mehr als 200 MB verändert.</div>`;
+  const inRange = d.scans;
+  c.rows.forEach((r, i) => {
+    const names = [ROOT_NAME, ...r.p.split("/").filter(Boolean)], n = nodeAt(names), cls = r.d > 0 ? "up" : "down";
+    const state = r.was == null ? "neu" : r.now == null ? "unter 100 MB / weg" : `jetzt ${fmt(r.now * 1e6)}`;
+    const el = row({
+      name: names[names.length - 1], cat: n ? n.k : 6, no: shopNo(i), num: `<span class="${cls}">${signed(r.d * 1e6)}</span>`,
+      sub: `${esc(displayPath(names.slice(0, -1)))} · ${state}`, subIsPath: true,
+      onclick: () => { const t = names.slice(); while (t.length > 1 && !nodeAt(t)) t.pop(); go(t); },
+      path: n ? realPath(names) : null,
+    });
+    el.insertAdjacentHTML("beforeend", spark(inRange.map(s => s.r.dirs[r.p] ?? null), cls));
+    list.append(el);
+  });
+}
+
+function renderHistory() {
+  const d = renderCharts();
+  if (!d) {
+    $("ch-stats").textContent = "Keine Chronik-Daten.";
+    return;
+  }
+  const series = [...d.daily, ...d.scans].sort((a, b) => a.t - b.t);
+  if (series.length) {
+    const first = series[0], last = series[series.length - 1], delta = last.used - first.used;
+    const days = Math.max((last.t - first.t) / DAY, 1);
+    const cls = delta > 0 ? "up" : delta < 0 ? "down" : "";
+    $("ch-stats").innerHTML = `<span>Belegt jetzt <b>${fmt(last.used)}</b></span>`
+      + `<span>im Zeitraum <b class="${cls}">${signed(delta)}</b></span><span>Ø <b class="${cls}">${signed(delta / days)}</b> pro Tag</span>`;
+  } else $("ch-stats").textContent = "Keine Daten in diesem Zeitraum.";
+  $("ch-used-legend").innerHTML = `<span><i class="ln" style="background:#01cdfe"></i>Belegt (Tageswert Janitor)</span>`
+    + `<span><i class="dot"></i>Scan mit root</span><span><i class="dot hollow"></i>Scan ohne sudo</span>`;
+  $("ch-cats-legend").innerHTML = catSeries(d.scans).reverse().map(se =>
+    `<span><i style="background:${swatch(se.color, se.hatch)}"></i>${se.name}</span>`).join("")
+    + `<span>! = Scan zählt mehr als belegt</span>`;
+  renderChanges(d);
+}
+document.querySelectorAll("#ch-range button").forEach(b => b.onclick = () => {
+  range = +b.dataset.r;
+  document.querySelectorAll("#ch-range button").forEach(x => x.classList.toggle("active", x === b));
+  renderHistory();
+});
 
 /* ── Laden & Scan (NOW LOADING) ────────────────────────────────────────── */
 async function load() {
@@ -855,11 +1500,12 @@ async function load() {
     $("empty").hidden = false; $("empty").innerHTML = "<b>COMING SOON</b>Der erste Scan dauert etwa eine Minute …";
     return false;
   }
-  const want = decodeURIComponent(location.hash.slice(1) || "/");
+  const want = location.hash === "#chronik" ? "/" : decodeURIComponent(location.hash.slice(1) || "/");
   view = [ROOT_NAME, ...want.split("/").filter(Boolean)];
   lastDepth = view.length;
   renderHeader();
   render();
+  if (location.hash === "#chronik") showPage("history");
   return true;
 }
 
@@ -868,39 +1514,35 @@ const ANNOUNCE = [
   "Bitte lassen Sie Ihre Caches nicht unbeaufsichtigt.", "Nächster Halt: ~/Library.", "Der Brunnen im Atrium nimmt keine Bytes an.",
   "Bitte bleiben Sie hinter der gelben Linie.",
 ];
-let polling = null, tickN = 0;
+let polling = null, tickN = 0, scanning = false, sudoTicket = false;
 async function poll() {
   const st = await fetch("/api/status").then(r => r.json()).catch(() => null);
-  const btn = $("scan");
-  if (st && st.running) {
-    btn.disabled = true;
-    btn.textContent = st.progress_files ? `Scanne … ${fmtN(st.progress_files)}` : "Scanne …";
-    btn.title = "";
+  if (st) { home = st.home; sudoTicket = st.sudo_ticket; }
+  scanning = !!(st && st.running);
+  if (scanning) {
     $("loading").hidden = false;
     $("nl-count").textContent = st.progress_files ? `${fmtN(st.progress_files)} Dateien gezählt` : "Türen werden aufgeschlossen …";
     $("nl-msg").textContent = ANNOUNCE[tickN++ % ANNOUNCE.length];
     if (!polling) polling = setInterval(poll, 1500);
   } else {
-    btn.disabled = false;
-    btn.textContent = "Jetzt scannen";
-    btn.title = st && !st.sudo_ticket ? "Kein sudo-Ticket: Scan läuft ohne root. Vorher im Terminal 'sudo -v' für einen vollständigen Scan." : "Vollständiger Scan mit root-Rechten";
     $("loading").hidden = true;
-    if (polling) { clearInterval(polling); polling = null; await load(); }
+    if (polling) { clearInterval(polling); polling = null; await load(); if (page === "history") loadHistory(); }
   }
 }
-$("scan").onclick = async () => {
-  $("scan").disabled = true;
+async function startScan() {
+  scanning = true;
   $("loading").hidden = false;
   $("nl-count").textContent = "Türen werden aufgeschlossen …";
   $("nl-msg").textContent = ANNOUNCE[0];
   await fetch("/api/scan", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"}).catch(() => null);
   setTimeout(poll, 400);
-};
+}
 
 function clock() { $("clock").textContent = new Date().toLocaleTimeString("de-DE", {hour: "2-digit", minute: "2-digit"}); }
 clock(); setInterval(clock, 20000);
 
 new ResizeObserver(() => scan && draw()).observe($("map"));
+new ResizeObserver(() => page === "history" && renderCharts()).observe($("ch-used"));
 // Deep-Link: ?tab=growth&metric=growth
 const qs = new URLSearchParams(location.search);
 function preselect(group, attr, val) {
@@ -908,7 +1550,7 @@ function preselect(group, attr, val) {
   if (b) document.querySelectorAll(`${group} button`).forEach(x => x.classList.toggle("active", x === b));
   return !!b;
 }
-if (preselect("#metric", "m", qs.get("metric"))) metric = qs.get("metric");
+if (METRICS[qs.get("metric")]) metric = qs.get("metric");
 if (preselect("#tabs", "t", qs.get("tab"))) tab = qs.get("tab");
 load().then(poll);
 </script>

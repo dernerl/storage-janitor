@@ -81,6 +81,16 @@ python3 disk-scan.py       # Scan im Vordergrund, mit Zusammenfassung
 
 - **Metriken:** Größe · Anzahl Dateien (findet `node_modules`-artige Dateifluten) · Wachstum.
 - **Klick** zoomt in den Ordner, **Doppelklick** oder **⌘-Klick** zeigt die Kachel unter der Maus im Finder.
+- **Rechtsklick** auf eine Kachel: Öffnen · Im Finder zeigen · Pfad kopieren · In den Papierkorb
+  legen · Endgültig löschen · Eigenschaften. Löschen geht nur im Home-Ordner (ab zwei Ebenen,
+  also nicht `~/Library` selbst) und für Programme unter `/Applications`; alles andere ist gesperrt.
+- **Startmenü „Plaza“** (Taskleiste unten links): Jetzt scannen, Erdgeschoss, Chronik, Metrik,
+  Papierkorb, macOS-Speicherverwaltung, Über Plaza.
+- **Chronik** (Startmenü oder `#chronik`): belegter Speicher über die Zeit (Tageswerte des
+  Janitors + Scans), gestapelt nach Kategorie, und die größten Ordner-Veränderungen im
+  Zeitraum (7 Tage / 30 Tage / Alles). Klick auf einen Ordner springt in den Lageplan.
+  Quelle ist `scans/history.jsonl` (eine Zeile pro Scan, wird nie rotiert);
+  `python3 disk-scan.py --history` trägt fehlende Scans aus der Rotation nach.
 - **Vollständig nur mit sudo:** Ist ein sudo-Ticket da (`sudo -v` im Terminal), scannt der
   Scanner als root, sonst als User („🔒 ohne sudo“). Es wird nie nach einem Passwort gefragt.
 - **Full Disk Access:** Auch root umgeht TCC nicht. Für Mail, Messages oder
