@@ -5,3 +5,4 @@ reports/
 __pycache__/
 scans/
 .dashboard.pid
+.DS_Store
